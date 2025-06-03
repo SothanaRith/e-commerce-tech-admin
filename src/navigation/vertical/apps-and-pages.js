@@ -1,37 +1,47 @@
+import { icon } from "@/views/demos/components/badge/demoCodeBadge";
+
 export default [
   {
     title: 'Product',
+   
+    icon: { icon: 'tabler-shopping-bag' },
     children: [
-      { title: 'List', to: 'apps-ecommerce-product-list' },
-      { title: 'Add', to: 'apps-ecommerce-product-add' },
-      { title: 'Category', to: 'apps-ecommerce-product-category-list' },
+      { title: 'List', to: 'apps-ecommerce-product-list',icon: { icon: 'tabler-list' } },
+      { title: 'Add', to: 'apps-ecommerce-product-add',icon: { icon: 'tabler-plus' } },
+      { title: 'Category', to: 'apps-ecommerce-product-category-list',icon: { icon: 'tabler-tag' } },
     ],
   },
   {
     title: 'Order',
+     icon: { icon: 'tabler-shopping-cart' },
     children: [
-      { title: 'List', to: 'apps-ecommerce-order-list' },
-      { title: 'Details', to: { name: 'apps-ecommerce-order-details-id', params: { id: '9042' } } },
+      { title: 'List', to: 'apps-ecommerce-order-list' , icon: { icon: 'tabler-list' } },
+
+      { title: 'Details', to: { name: 'apps-ecommerce-order-details-id', params: { id: '9042' } , icon: { icon: 'tabler-info-circle' } } },
     ],
   },
   {
     title: 'Customer',
+    icon: { icon: 'tabler-users' },
     children: [
-      { title: 'List', to: 'apps-ecommerce-customer-list' },
-      { title: 'Details', to: { name: 'apps-ecommerce-customer-details-id', params: { id: 478426 } } },
+      { title: 'List', to: 'apps-ecommerce-customer-list' ,icon: { icon: 'tabler-list' } },
+      { title: 'Details', to: { name: 'apps-ecommerce-customer-details-id', params: { id: 478426 } , icon: { icon: 'tabler-info-circle' } } },
     ],
   },
   {
     title: 'Manage Review',
     to: 'apps-ecommerce-manage-review',
+    icon: { icon: 'tabler-star' },
   },
   {
     title: 'Referrals',
     to: 'apps-ecommerce-referrals',
+    icon: { icon: 'tabler-user-plus' },
   },
   {
     title: 'Settings',
     to: 'apps-ecommerce-settings',
+    icon: { icon: 'tabler-settings' },
   },
   {
     title: 'Chat',
