@@ -47,26 +47,7 @@ const userProfileList = [
       params: { tab: 'account' },
     },
   },
-  {
-    type: 'navItem',
-    icon: 'tabler-file-dollar',
-    title: 'Billing Plan',
-    to: {
-      name: 'pages-account-settings-tab',
-      params: { tab: 'billing-plans' },
-    },
-    badgeProps: {
-      color: 'error',
-      content: '4',
-    },
-  },
   { type: 'divider' },
-  {
-    type: 'navItem',
-    icon: 'tabler-currency-dollar',
-    title: 'Pricing',
-    to: { name: 'pages-pricing' },
-  },
   {
     type: 'navItem',
     icon: 'tabler-question-mark',
