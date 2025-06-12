@@ -7,6 +7,7 @@ import {
   useConfigStore,
 } from '@core/stores/config'
 import { hexToRgb } from '@core/utils/colorConverter'
+import AlertMessage from "@/helper/AlertMessage.vue";
 
 const { global } = useTheme()
 
@@ -23,6 +24,7 @@ const configStore = useConfigStore()
     <VApp :style="`--v-global-theme-primary: ${hexToRgb(global.current.value.colors.primary)}`">
       <RouterView />
       <ScrollToTop />
+      <AlertMessage />
     </VApp>
   </VLocaleProvider>
 </template>

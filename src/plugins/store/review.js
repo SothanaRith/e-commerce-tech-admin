@@ -3,17 +3,17 @@ import { ref, computed, watch } from 'vue'
 import { useApi } from '@/composables/useApi'
 import { createUrl } from "@core/composable/createUrl"
 
-export const usePaymentStore = defineStore('userPayment', () => {
+export const useReviewStore = defineStore('userReview', () => {
   const searchQuery = ref('')
   const itemsPerPage = ref(10)
   const page = ref(1)
   const sortBy = ref()
   const orderBy = ref()
   const selectedRows = ref([])
-  const paymentData = ref(null)
+  const reviewData = ref(null)
 
-  const fetchPayment = async () => {
-    const { data } = await useApi(createUrl('/payment/get-all-categories', {
+  const fetchReview = async () => {
+    const { data } = await useApi(createUrl('/review/get-all-categories', {
       query: {
         q: searchQuery,
         sortBy,
@@ -21,11 +21,11 @@ export const usePaymentStore = defineStore('userPayment', () => {
       },
     }))
 
-    paymentData.value = data
+    reviewData.value = data
   }
 
-  const payment = computed(() => paymentData.value?.value.data || [])
-  const totalPayment = computed(() => paymentData.value?.value.total || 0)
+  const review = computed(() => reviewData.value?.value.data || [])
+  const totalReview = computed(() => reviewData.value?.value.total || 0)
 
   const updateOptions = options => {
     sortBy.value = options.sortBy[0]?.key
@@ -33,32 +33,32 @@ export const usePaymentStore = defineStore('userPayment', () => {
   }
 
   watch([searchQuery, sortBy, orderBy], async () => {
-    await fetchPayment()
+    await fetchReview()
   }, { immediate: true })
 
-  // Add new payment
-  const addPayment = async paymentData => {
+  // Add new review
+  const addReview = async reviewData => {
 
 
-    await $api('/payment/create-payment', {
+    await $api('/review/create-review', {
       method: 'POST',
-      body: JSON.stringify(paymentData),
+      body: JSON.stringify(reviewData),
       headers: { 'Content-Type': 'application/json' },
     })
 
-    await fetchPayment()
+    await fetchReview()
   }
 
-  // Edit payment
-  const editPayment = async (id, paymentData) => {
+  // Edit review
+  const editReview = async (id, reviewData) => {
 
-    await $api(`/payment/update-payment/${id}`, {
+    await $api(`/review/update-review/${id}`, {
       method: 'POST',
-      body: JSON.stringify(paymentData),
+      body: JSON.stringify(reviewData),
       headers: { 'Content-Type': 'application/json' },
     })
 
-    await fetchPayment()
+    await fetchReview()
   }
 
   return {
@@ -68,11 +68,11 @@ export const usePaymentStore = defineStore('userPayment', () => {
     sortBy,
     orderBy,
     selectedRows,
-    payment,
-    totalPayment,
+    review,
+    totalReview,
     updateOptions,
-    fetchPayment,
-    addPayment,
-    editPayment,
+    fetchReview,
+    addReview,
+    editReview,
   }
 })

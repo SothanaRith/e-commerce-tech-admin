@@ -3,17 +3,17 @@ import { ref, computed, watch } from 'vue'
 import { useApi } from '@/composables/useApi'
 import { createUrl } from "@core/composable/createUrl"
 
-export const usePaymentStore = defineStore('userPayment', () => {
+export const useOrderStore = defineStore('userOrder', () => {
   const searchQuery = ref('')
   const itemsPerPage = ref(10)
   const page = ref(1)
   const sortBy = ref()
   const orderBy = ref()
   const selectedRows = ref([])
-  const paymentData = ref(null)
+  const orderData = ref(null)
 
-  const fetchPayment = async () => {
-    const { data } = await useApi(createUrl('/payment/get-all-categories', {
+  const fetchOrder = async () => {
+    const { data } = await useApi(createUrl('/order/get-all-categories', {
       query: {
         q: searchQuery,
         sortBy,
@@ -21,11 +21,11 @@ export const usePaymentStore = defineStore('userPayment', () => {
       },
     }))
 
-    paymentData.value = data
+    orderData.value = data
   }
 
-  const payment = computed(() => paymentData.value?.value.data || [])
-  const totalPayment = computed(() => paymentData.value?.value.total || 0)
+  const order = computed(() => orderData.value?.value.data || [])
+  const totalOrder = computed(() => orderData.value?.value.total || 0)
 
   const updateOptions = options => {
     sortBy.value = options.sortBy[0]?.key
@@ -33,32 +33,32 @@ export const usePaymentStore = defineStore('userPayment', () => {
   }
 
   watch([searchQuery, sortBy, orderBy], async () => {
-    await fetchPayment()
+    await fetchOrder()
   }, { immediate: true })
 
-  // Add new payment
-  const addPayment = async paymentData => {
+  // Add new order
+  const addOrder = async orderData => {
 
 
-    await $api('/payment/create-payment', {
+    await $api('/order/create-order', {
       method: 'POST',
-      body: JSON.stringify(paymentData),
+      body: JSON.stringify(orderData),
       headers: { 'Content-Type': 'application/json' },
     })
 
-    await fetchPayment()
+    await fetchOrder()
   }
 
-  // Edit payment
-  const editPayment = async (id, paymentData) => {
+  // Edit order
+  const editOrder = async (id, orderData) => {
 
-    await $api(`/payment/update-payment/${id}`, {
+    await $api(`/order/update-order/${id}`, {
       method: 'POST',
-      body: JSON.stringify(paymentData),
+      body: JSON.stringify(orderData),
       headers: { 'Content-Type': 'application/json' },
     })
 
-    await fetchPayment()
+    await fetchOrder()
   }
 
   return {
@@ -68,11 +68,11 @@ export const usePaymentStore = defineStore('userPayment', () => {
     sortBy,
     orderBy,
     selectedRows,
-    payment,
-    totalPayment,
+    order,
+    totalOrder,
     updateOptions,
-    fetchPayment,
-    addPayment,
-    editPayment,
+    fetchOrder,
+    addOrder,
+    editOrder,
   }
 })
