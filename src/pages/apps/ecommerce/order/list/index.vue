@@ -6,29 +6,6 @@ import paypalLight from '@images/icons/payments/img/paypal-light.png'
 import {useOrderStore} from "@/plugins/store/order.js";
 import {computed, watch} from "vue";
 
-const widgetData = ref([
-  {
-    title: 'Pending Payment',
-    value: 56,
-    icon: 'tabler-calendar-stats',
-  },
-  {
-    title: 'Completed',
-    value: 12689,
-    icon: 'tabler-checks',
-  },
-  {
-    title: 'Refunded',
-    value: 124,
-    icon: 'tabler-wallet',
-  },
-  {
-    title: 'Failed',
-    value: 32,
-    icon: 'tabler-alert-octagon',
-  },
-])
-
 const mastercard = useGenerateImageVariant(masterCardLight, masterCardDark)
 const paypal = useGenerateImageVariant(paypalLight, paypalDark)
 
@@ -72,30 +49,6 @@ const updateOptions = options => {
   orderBy.value = options.sortBy[0]?.order
 }
 
-const resolvePaymentStatus = status => {
-
-  if (status === "completed")
-    return {
-      text: 'Paid',
-      color: 'success',
-    }
-  if (status === "pending")
-    return {
-      text: 'Pending',
-      color: 'warning',
-    }
-  if (status === "cancelled")
-    return {
-      text: 'Cancelled',
-      color: 'secondary',
-    }
-  if (status === 4)
-    return {
-      text: 'Failed',
-      color: 'error',
-    }
-}
-
 const resolveStatus = status => {
   if (status === "completed")
     return {
@@ -134,34 +87,74 @@ const resolveStatus = status => {
     }
 }
 
+const widgetData = ref()
 const useOrder = useOrderStore()
 
 useOrder.fetchOrder()
 
-const { pending, delivered, completed, totalPending, itemsPerPage, searchQuery, page, sortBy, orderBy, selectedRows } = storeToRefs(useOrder)
+const { pending, delivered, completed, totalOrders, itemsPerPage, searchQuery, page, sortBy, orderBy, selectedRows, totalDelivered, totalPending, totalCompleted } = storeToRefs(useOrder)
 
 onMounted(async () => {
   // Fetch data when component is mounted
   await useOrder.fetchOrder()
+  widgetData.value = [
+    {
+      title: 'All Process Payment',
+      value: (totalPending.value + totalDelivered.value + totalCompleted.value),
+      icon: 'tabler-calendar-stats',
+    },
+    {
+      title: 'Pending',
+      value: totalPending.value,
+      icon: 'tabler-checks',
+    },
+    {
+      title: 'Delivered',
+      value: totalDelivered.value,
+      icon: 'tabler-wallet',
+    },
+    {
+      title: 'Completed',
+      value: totalCompleted.value,
+      icon: 'tabler-alert-octagon',
+    },
+  ]
 })
 
 watch([searchQuery, sortBy, orderBy], async () => {
   await useOrder.fetchOrder()
-  console.log(pendingData)
+  widgetData.value = [
+    {
+      title: 'All Process Payment',
+      value: (totalPending.value + totalDelivered.value + totalCompleted.value),
+      icon: 'tabler-calendar-stats',
+    },
+    {
+      title: 'Pending',
+      value: totalPending.value,
+      icon: 'tabler-checks',
+    },
+    {
+      title: 'Delivered',
+      value: totalDelivered.value,
+      icon: 'tabler-wallet',
+    },
+    {
+      title: 'Completed',
+      value: totalCompleted.value,
+      icon: 'tabler-alert-octagon',
+    },
+  ]
 }, { immediate: true })
 
 const pendingData = computed(() => toRaw(pending.value) || [])
 
-const deleteOrder = async id => {
-  await $api(`/apps/ecommerce/orders/${ id }`, { method: 'DELETE' })
+const rejectOrder = async id => {
 
-  // Delete from selectedRows
-  const index = selectedRows.value.findIndex(row => row === id)
-  if (index !== -1)
-    selectedRows.value.splice(index, 1)
+}
 
-  // Refetch Orders
-  fetchOrders()
+const approveOrder = async id => {
+
 }
 </script>
 
@@ -260,12 +253,11 @@ const deleteOrder = async id => {
         v-model:page="page"
         :headers="headers"
         :items="pendingData"
-        :items-length="totalPending"
+        :items-length="totalOrders"
         show-select
         class="text-no-wrap"
         @update:options="updateOptions"
       >
-
         <template #item.order="{ item }">
           <RouterLink :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.id } }">
             #{{ item.id }}
@@ -295,7 +287,6 @@ const deleteOrder = async id => {
                 class="font-weight-medium"
               >{{ avatarText(item.User.name) }}</span>
             </VAvatar>
-
             <div class="d-flex flex-column">
               <div class="text-body-1 font-weight-medium">
                 <RouterLink
@@ -314,16 +305,31 @@ const deleteOrder = async id => {
 
         <!-- Payments -->
         <template #item.payment="{ item }">
-          <div
-            :class="`text-${resolvePaymentStatus(item.payment)?.color}`"
-            class="font-weight-medium d-flex align-center gap-x-2"
-          >
-            <VIcon
-              icon="tabler-circle-filled"
-              size="10"
-            />
-            <div style="line-height: 22px;">
-              {{ resolvePaymentStatus(item.payment)?.text }}
+          <div class="d-flex align-center gap-x-1">
+            <VAvatar
+              size="34"
+              :color="!item.avatar ? 'primary' : ''"
+              :variant="!item.avatar ? 'tonal' : undefined"
+            >
+              <VImg
+                v-if="item.paymentType"
+                :src="item.paymentType"
+              />
+
+              <span
+                v-else
+                class="font-weight-medium"
+              >{{ avatarText(item.paymentType) }}</span>
+            </VAvatar>
+            <div class="d-flex flex-column">
+              <div class="text-body-1 font-weight-medium">
+                <RouterLink
+                  :to="{ name: 'pages-user-profile-tab', params: { tab: 'profile' } }"
+                  class="text-link"
+                >
+                  {{ item.paymentType }}
+                </RouterLink>
+              </div>
             </div>
           </div>
         </template>
@@ -356,17 +362,14 @@ const deleteOrder = async id => {
             <VIcon icon="tabler-dots-vertical" />
             <VMenu activator="parent">
               <VList>
-                <VListItem
-                  value="view"
-                  :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.order } }"
-                >
-                  View
+                <VListItem value="view">
+                  Approve
                 </VListItem>
                 <VListItem
                   value="delete"
-                  @click="deleteOrder(item.id)"
+                  @click="rejectOrder(item.id)"
                 >
-                  Delete
+                  Reject
                 </VListItem>
               </VList>
             </VMenu>
@@ -378,7 +381,7 @@ const deleteOrder = async id => {
           <TablePagination
             v-model:page="page"
             :items-per-page="itemsPerPage"
-            :total-items="totalPending"
+            :total-items="totalOrders"
           />
         </template>
       </VDataTableServer>
