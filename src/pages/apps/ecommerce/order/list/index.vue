@@ -4,6 +4,7 @@ import masterCardLight from '@images/icons/payments/img/mastercard.png'
 import paypalDark from '@images/icons/payments/img/paypal-dark.png'
 import paypalLight from '@images/icons/payments/img/paypal-light.png'
 import {useOrderStore} from "@/plugins/store/order.js";
+import {computed, watch} from "vue";
 
 const widgetData = ref([
   {
@@ -30,14 +31,6 @@ const widgetData = ref([
 
 const mastercard = useGenerateImageVariant(masterCardLight, masterCardDark)
 const paypal = useGenerateImageVariant(paypalLight, paypalDark)
-const searchQuery = ref('')
-
-// Data table options
-const itemsPerPage = ref(10)
-const page = ref(1)
-const sortBy = ref()
-const orderBy = ref()
-const selectedRows = ref([])
 
 // Data table Headers
 const headers = [
@@ -80,17 +73,18 @@ const updateOptions = options => {
 }
 
 const resolvePaymentStatus = status => {
-  if (status === 1)
+
+  if (status === "completed")
     return {
       text: 'Paid',
       color: 'success',
     }
-  if (status === 2)
+  if (status === "pending")
     return {
       text: 'Pending',
       color: 'warning',
     }
-  if (status === 3)
+  if (status === "cancelled")
     return {
       text: 'Cancelled',
       color: 'secondary',
@@ -103,6 +97,21 @@ const resolvePaymentStatus = status => {
 }
 
 const resolveStatus = status => {
+  if (status === "completed")
+    return {
+      text: 'Paid',
+      color: 'success',
+    }
+  if (status === "pending")
+    return {
+      text: 'Pending',
+      color: 'warning',
+    }
+  if (status === "cancelled")
+    return {
+      text: 'Cancelled',
+      color: 'secondary',
+    }
   if (status === 'Delivered')
     return {
       text: 'Delivered',
@@ -128,21 +137,20 @@ const resolveStatus = status => {
 const useOrder = useOrderStore()
 
 useOrder.fetchOrder()
-const {
-  data: ordersData,
-  execute: fetchOrders,
-} = await useApi(createUrl('/apps/ecommerce/orders', {
-  query: {
-    q: searchQuery,
-    page,
-    itemsPerPage,
-    sortBy,
-    orderBy,
-  },
-}))
 
-const orders = computed(() => ordersData.value.orders)
-const totalOrder = computed(() => ordersData.value.total)
+const { pending, delivered, completed, totalPending, itemsPerPage, searchQuery, page, sortBy, orderBy, selectedRows } = storeToRefs(useOrder)
+
+onMounted(async () => {
+  // Fetch data when component is mounted
+  await useOrder.fetchOrder()
+})
+
+watch([searchQuery, sortBy, orderBy], async () => {
+  await useOrder.fetchOrder()
+  console.log(pendingData)
+}, { immediate: true })
+
+const pendingData = computed(() => toRaw(pending.value) || [])
 
 const deleteOrder = async id => {
   await $api(`/apps/ecommerce/orders/${ id }`, { method: 'DELETE' })
@@ -251,22 +259,22 @@ const deleteOrder = async id => {
         v-model:model-value="selectedRows"
         v-model:page="page"
         :headers="headers"
-        :items="orders"
-        :items-length="totalOrder"
+        :items="pendingData"
+        :items-length="totalPending"
         show-select
         class="text-no-wrap"
         @update:options="updateOptions"
       >
-        <!-- Order ID -->
+
         <template #item.order="{ item }">
-          <RouterLink :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.order } }">
-            #{{ item.order }}
+          <RouterLink :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.id } }">
+            #{{ item.id }}
           </RouterLink>
         </template>
 
         <!-- Date -->
         <template #item.date="{ item }">
-          {{ new Date(item.date).toDateString() }}
+          {{ new Date(item.updatedAt).toDateString() }}
         </template>
 
         <!-- Customers  -->
@@ -274,18 +282,18 @@ const deleteOrder = async id => {
           <div class="d-flex align-center gap-x-3">
             <VAvatar
               size="34"
-              :color="!item.avatar.length ? 'primary' : ''"
-              :variant="!item.avatar.length ? 'tonal' : undefined"
+              :color="!item.avatar ? 'primary' : ''"
+              :variant="!item.avatar ? 'tonal' : undefined"
             >
               <VImg
-                v-if="item.avatar"
-                :src="item.avatar"
+                v-if="item.User.name"
+                :src="item.User.name"
               />
 
               <span
                 v-else
                 class="font-weight-medium"
-              >{{ avatarText(item.customer) }}</span>
+              >{{ avatarText(item.User.name) }}</span>
             </VAvatar>
 
             <div class="d-flex flex-column">
@@ -294,11 +302,11 @@ const deleteOrder = async id => {
                   :to="{ name: 'pages-user-profile-tab', params: { tab: 'profile' } }"
                   class="text-link"
                 >
-                  {{ item.customer }}
+                  {{ item.User.name }}
                 </RouterLink>
               </div>
               <div class="text-body-2">
-                {{ item.email }}
+                {{ item.User.email }}
               </div>
             </div>
           </div>
@@ -333,11 +341,11 @@ const deleteOrder = async id => {
         <template #item.method="{ item }">
           <div class="d-flex align-center">
             <img
-              :src="item.method === 'mastercard' ? mastercard : paypal"
+              :src="item.paymentType === 'mastercard' ? mastercard : paypal"
               height="18"
             >
             <div class="text-body-1">
-              ...{{ item.method === 'mastercard' ? item.methodNumber : '@gmail.com' }}
+              ...{{ item.paymentType === 'mastercard' ? item.paymentType : '@gmail.com' }}
             </div>
           </div>
         </template>
@@ -370,7 +378,7 @@ const deleteOrder = async id => {
           <TablePagination
             v-model:page="page"
             :items-per-page="itemsPerPage"
-            :total-items="totalOrder"
+            :total-items="totalPending"
           />
         </template>
       </VDataTableServer>
