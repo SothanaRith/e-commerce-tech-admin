@@ -3,6 +3,7 @@ import masterCardDark from '@images/icons/payments/img/master-dark.png'
 import masterCardLight from '@images/icons/payments/img/mastercard.png'
 import paypalDark from '@images/icons/payments/img/paypal-dark.png'
 import paypalLight from '@images/icons/payments/img/paypal-light.png'
+import {useOrderStore} from "@/plugins/store/order.js";
 
 const widgetData = ref([
   {
@@ -124,6 +125,9 @@ const resolveStatus = status => {
     }
 }
 
+const useOrder = useOrderStore()
+
+useOrder.fetchOrder()
 const {
   data: ordersData,
   execute: fetchOrders,

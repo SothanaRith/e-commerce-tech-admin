@@ -13,7 +13,7 @@ export const useOrderStore = defineStore('userOrder', () => {
   const orderData = ref(null)
 
   const fetchOrder = async () => {
-    const { data } = await useApi(createUrl('/order/get-all-categories', {
+    const { data } = await useApi(createUrl('/product/admin/orders/processed', {
       query: {
         q: searchQuery,
         sortBy,
@@ -22,6 +22,7 @@ export const useOrderStore = defineStore('userOrder', () => {
     }))
 
     orderData.value = data
+      console.log(data)
   }
 
   const order = computed(() => orderData.value?.value.data || [])
