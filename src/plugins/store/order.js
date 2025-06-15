@@ -41,7 +41,7 @@ export const useOrderStore = defineStore('userOrder', () => {
     try {
       const { data } = await useApi(createUrl('/product/admin/orders/processed', {
         query: {
-          q: searchQuery.value,
+          searchQuery: searchQuery.value,
           sortBy: sortBy.value,
           orderBy: orderBy.value,
           itemsPerPage: itemsPerPage.value,
