@@ -5,21 +5,27 @@ import { createUrl } from "@core/composable/createUrl"
 
 export const useOrderStore = defineStore('userOrder', () => {
   const searchQuery = ref('')
+  const status = ref('pending')
   const itemsPerPage = ref(10) // Number of items per page
   const page = ref(1) // Current page
   const sortBy = ref()
   const orderBy = ref()
   const selectedRows = ref([])
+  const currentOrderData = ref([])
 
   // Store for order data with categories (pending, delivered, completed)
   const orderData = ref({
     pending: [],
+    delivery: [],
     delivered: [],
     completed: [],
+    cancelled: [],
     totalPending: 0,
+    totalDelivery: 0,
     totalDelivered: 0,
     totalCompleted: 0,
-      
+    totalCancelled: 0,
+
   })
 
   // Store for pagination info
@@ -46,38 +52,82 @@ export const useOrderStore = defineStore('userOrder', () => {
       // Assign the fetched data to the correct categories
       orderData.value = {
         pending: data.value.pending.orders || [],
+        delivery: data.value.delivery.orders || [],
         delivered: data.value.delivered.orders || [],
         completed: data.value.completed.orders || [],
+        cancelled: data.value.cancelled.orders || [],
         totalPending: data.value.pending.pagination.total || 0,
+        totalDelivery: data.value.delivery.pagination.total,
         totalDelivered: data.value.delivered.pagination.total,
         totalCompleted: data.value.completed.pagination.total,
+        totalCancelled: data.value.cancelled.pagination.total,
       }
 
-      // Update pagination info
-      pagination.value = {
-        total: data.value.pending.pagination.total || 0,
-        totalPages: data.value.pending.pagination.totalPages || 0,
-        currentPage: page.value,
-        itemsPerPage: itemsPerPage.value,
-      }
+      if (status.value === "pending") {
 
+        currentOrderData.value = orderData.value.pending
+
+        // Update pagination info
+        pagination.value = {
+          total: data.value.pending.pagination.total || 0,
+          totalPages: data.value.pending.pagination.totalPages || 0,
+          currentPage: page.value,
+          itemsPerPage: itemsPerPage.value,
+        }
+      }  else if (status.value === "delivery") {
+        currentOrderData.value = orderData.value.delivery
+
+        // Update pagination info
+        pagination.value = {
+          total: data.value.delivery.pagination.total || 0,
+          totalPages: data.value.delivery.pagination.totalPages || 0,
+          currentPage: page.value,
+          itemsPerPage: itemsPerPage.value,
+        }
+      } else if (status.value === "delivered") {
+        currentOrderData.value = orderData.value.delivered
+
+        // Update pagination info
+        pagination.value = {
+          total: data.value.delivered.pagination.total || 0,
+          totalPages: data.value.delivered.pagination.totalPages || 0,
+          currentPage: page.value,
+          itemsPerPage: itemsPerPage.value,
+        }
+      } else if (status.value === "completed") {
+        currentOrderData.value = orderData.value.completed
+
+        // Update pagination info
+        pagination.value = {
+          total: data.value.completed.pagination.total || 0,
+          totalPages: data.value.completed.pagination.totalPages || 0,
+          currentPage: page.value,
+          itemsPerPage: itemsPerPage.value,
+        }
+      } else if (status.value === "cancelled") {
+        currentOrderData.value = orderData.value.cancelled
+
+        // Update pagination info
+        pagination.value = {
+          total: data.value.cancelled.pagination.total || 0,
+          totalPages: data.value.cancelled.pagination.totalPages || 0,
+          currentPage: page.value,
+          itemsPerPage: itemsPerPage.value,
+        }
+      }
+      
     } catch (error) {
       console.error('Error fetching orders:', error)
     }
   }
 
-  // Computed properties for the categories
-  const pending = computed(() => orderData.value.pending || [])
-  const delivered = computed(() => orderData.value.delivered || [])
-  const completed = computed(() => orderData.value.completed || [])
-
   // Computed property for total count of all orders
   const totalOrders = computed(() => pagination.value.total)
-
   const totalPending = computed(() => orderData.value.totalPending || 0)
+  const totalDelivery = computed(() => orderData.value.totalDelivery|| 0)
   const totalDelivered = computed(() => orderData.value.totalDelivered|| 0)
   const totalCompleted = computed(() => orderData.value.totalCompleted || 0)
-
+  const totalCancelled = computed(() => orderData.value.totalCancelled || 0)
 
   // Update sorting options
   const updateOptions = options => {
@@ -90,25 +140,13 @@ export const useOrderStore = defineStore('userOrder', () => {
     await fetchOrder()
   }, { immediate: true })
 
-  // Methods for CRUD operations (if needed in your view)
-  const addOrder = async orderData => {
+  const editOrder = async (id, status) => {
     try {
-      await $api('/order/create-order', {
+      await $api(`/product/orders/${id}/status`, {
         method: 'POST',
-        body: JSON.stringify(orderData),
-        headers: { 'Content-Type': 'application/json' },
-      })
-      await fetchOrder()
-    } catch (error) {
-      console.error('Error adding order:', error)
-    }
-  }
-
-  const editOrder = async (id, orderData) => {
-    try {
-      await $api(`/order/update-order/${id}`, {
-        method: 'POST',
-        body: JSON.stringify(orderData),
+        body: JSON.stringify({
+          status: status,
+        }),
         headers: { 'Content-Type': 'application/json' },
       })
       await fetchOrder()
@@ -124,18 +162,18 @@ export const useOrderStore = defineStore('userOrder', () => {
     sortBy,
     orderBy,
     selectedRows,
-    pending,
-    delivered,
-    completed,
     totalPending,
+    totalDelivery,
     totalDelivered,
     totalCompleted,
-    totalOrders, // Computed total orders across all categories
-    pagination,  // Pagination info
+    totalCancelled,
+    totalOrders,
+    pagination,
     updateOptions,
     fetchOrder,
-    addOrder,
     editOrder,
     orderData,
+    status,
+    currentOrderData,
   }
 })

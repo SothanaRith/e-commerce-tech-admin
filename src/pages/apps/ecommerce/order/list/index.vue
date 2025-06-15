@@ -70,9 +70,9 @@ const resolveStatus = status => {
       text: 'Delivered',
       color: 'success',
     }
-  if (status === 'Out for Delivery')
+  if (status === 'delivery')
     return {
-      text: 'Out for Delivery',
+      text: 'delivery',
       color: 'primary',
     }
   if (status === 'Ready to Pickup')
@@ -80,9 +80,9 @@ const resolveStatus = status => {
       text: 'Ready to Pickup',
       color: 'info',
     }
-  if (status === 'Dispatched')
+  if (status === 'cancelled')
     return {
-      text: 'Dispatched',
+      text: 'cancelled',
       color: 'warning',
     }
 }
@@ -92,7 +92,7 @@ const useOrder = useOrderStore()
 
 useOrder.fetchOrder()
 
-const { pending, delivered, completed, totalOrders, itemsPerPage, searchQuery, page, sortBy, orderBy, selectedRows, totalDelivered, totalPending, totalCompleted } = storeToRefs(useOrder)
+const { totalOrders, itemsPerPage, searchQuery, page, sortBy, orderBy, selectedRows, totalDelivered, totalPending, totalCompleted, status, currentOrderData } = storeToRefs(useOrder)
 
 onMounted(async () => {
   // Fetch data when component is mounted
@@ -147,14 +147,13 @@ watch([searchQuery, sortBy, orderBy], async () => {
   ]
 }, { immediate: true })
 
-const pendingData = computed(() => toRaw(pending.value) || [])
+watch([status], async () => {
+  await useOrder.fetchOrder()
+}, { immediate: true })
 
-const rejectOrder = async id => {
-
-}
-
-const approveOrder = async id => {
-
+const updateOrderStatus = async (id, orderStatus) => {
+  await useOrder.editOrder(id, orderStatus)
+  status.value = orderStatus
 }
 </script>
 
@@ -230,6 +229,12 @@ const approveOrder = async id => {
 
           <div class="d-flex gap-x-4 align-center">
             <AppSelect
+              v-model="status"
+              style="min-inline-size: 6.25rem;"
+              :items="[
+                'pending', 'delivery', 'delivered', 'completed', 'cancelled']"
+            />
+            <AppSelect
               v-model="itemsPerPage"
               style="min-inline-size: 6.25rem;"
               :items="[5, 10, 20, 50, 100]"
@@ -252,7 +257,7 @@ const approveOrder = async id => {
         v-model:model-value="selectedRows"
         v-model:page="page"
         :headers="headers"
-        :items="pendingData"
+        :items="currentOrderData"
         :items-length="totalOrders"
         show-select
         class="text-no-wrap"
@@ -362,12 +367,17 @@ const approveOrder = async id => {
             <VIcon icon="tabler-dots-vertical" />
             <VMenu activator="parent">
               <VList>
-                <VListItem value="view">
+                <VListItem
+                  value="view"
+                  :disabled="item.status.toUpperCase() !== 'pending'.toUpperCase()"
+                  @click="updateOrderStatus(item.id, 'delivery')"
+                >
                   Approve
                 </VListItem>
                 <VListItem
                   value="delete"
-                  @click="rejectOrder(item.id)"
+                  :disabled="item.status.toUpperCase() !== 'pending'.toUpperCase()"
+                  @click="updateOrderStatus(item.id, 'cancelled')"
                 >
                   Reject
                 </VListItem>
