@@ -1,14 +1,8 @@
 <script setup>
-import masterCardDark from '@images/icons/payments/img/master-dark.png'
-import masterCardLight from '@images/icons/payments/img/mastercard.png'
-import paypalDark from '@images/icons/payments/img/paypal-dark.png'
-import paypalLight from '@images/icons/payments/img/paypal-light.png'
-import {useOrderStore} from "@/plugins/store/order.js";
-import {computed, watch} from "vue";
-const baseUrl = import.meta.env.VITE_BASE_URL;
+import { useOrderStore } from "@/plugins/store/order"
+import { computed, watch } from "vue"
 
-const mastercard = useGenerateImageVariant(masterCardLight, masterCardDark)
-const paypal = useGenerateImageVariant(paypalLight, paypalDark)
+const baseUrl = import.meta.env.VITE_BASE_URL
 
 // Data table Headers
 const headers = [
@@ -30,7 +24,7 @@ const headers = [
     sortable: false,
   },
   {
-    title: 'Status',
+    title: 'Payment Status',
     key: 'status',
   },
   {
@@ -95,6 +89,12 @@ const paymentImage = type => {
     return 'https://cdn6.aptoide.com/imgs/c/f/f/cffec3f2fc237b5e9baefcff21783b7c_icon.png'
   if (type.toUpperCase() === "acleda".toUpperCase())
     return 'https://www.acledasecurities.com.kh/as/assets/listed_company/ABC/logo.png'
+  if (type.toUpperCase() === "bakong app".toUpperCase())
+    return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTAksY2TS0gKo7ahWTiy73LEAvW6Hezllu7eQ&s'
+  if (type.toUpperCase() === "khqr".toUpperCase())
+    return 'https://devithuotkeo.com/static/image/portfolio/khqr/khqr-5.png'
+  if (type.toUpperCase() === "ABA Offline Payment".toUpperCase())
+    return 'https://cdn6.aptoide.com/imgs/2/a/6/2a6b391e2053870eac06539bd99d51a6_icon.png'
 }
 
 const widgetData = ref()
@@ -328,13 +328,13 @@ const updateOrderStatus = async (id, orderStatus) => {
             >
               <VImg
                 v-if="item.paymentType"
-                :src="item.paymentType"
+                :src="paymentImage(item.paymentType)"
               />
 
               <span
                 v-else
                 class="font-weight-medium"
-              >{{ avatarText(item.paymentType) }}</span>
+              ></span>
             </VAvatar>
             <div class="d-flex flex-column">
               <div class="text-body-1 font-weight-medium">
@@ -361,12 +361,9 @@ const updateOrderStatus = async (id, orderStatus) => {
         <!-- Method -->
         <template #item.method="{ item }">
           <div class="d-flex align-center">
-            <img
-              :src="item.paymentType === 'mastercard' ? mastercard : paypal"
-              height="18"
-            >
+
             <div class="text-body-1">
-              ...{{ item.paymentType === 'mastercard' ? item.paymentType : '@gmail.com' }}
+              {{ item.billingNumber }}
             </div>
           </div>
         </template>

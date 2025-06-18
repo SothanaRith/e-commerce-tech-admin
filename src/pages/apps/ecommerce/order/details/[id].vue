@@ -1,150 +1,94 @@
 <script setup>
-import product21 from '@images/ecommerce-images/product-21.png'
-import product22 from '@images/ecommerce-images/product-22.png'
-import product23 from '@images/ecommerce-images/product-23.png'
-import product24 from '@images/ecommerce-images/product-24.png'
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useOrderStore } from '@/plugins/store/order'
 
-const orderData = ref()
+const useOrder = useOrderStore()
 const route = useRoute('apps-ecommerce-order-details-id')
-const { data } = await useApi(`/apps/ecommerce/orders/${ route.params.id }`)
-if (data.value)
-  orderData.value = data.value
+
+const orderData = ref(null)
+const orderDetail = ref([])
+const totalAmount = ref()
+const trackingSteps = ref()
+const baseUrl = import.meta.env.VITE_BASE_URL
+
 const isConfirmDialogVisible = ref(false)
 const isUserInfoEditDialogVisible = ref(false)
 const isEditAddressDialogVisible = ref(false)
 
+// Headers for product table
 const headers = [
-  {
-    title: 'Product',
-    key: 'productName',
-  },
-  {
-    title: 'Price',
-    key: 'price',
-  },
-  {
-    title: 'Quantity',
-    key: 'quantity',
-  },
-  {
-    title: 'Total',
-    key: 'total',
-  },
+  { title: 'Product', key: 'productName' },
+  { title: 'Price', key: 'price' },
+  { title: 'Quantity', key: 'quantity' },
+  { title: 'Total', key: 'total' },
 ]
 
-const resolvePaymentStatus = payment => {
-  if (payment === 1)
-    return {
-      text: 'Paid',
-      color: 'success',
-    }
-  if (payment === 2)
-    return {
-      text: 'Pending',
-      color: 'warning',
-    }
-  if (payment === 3)
-    return {
-      text: 'Cancelled',
-      color: 'secondary',
-    }
-  if (payment === 4)
-    return {
-      text: 'Failed',
-      color: 'error',
-    }
+// Resolve payment status
+const resolvePaymentStatus = status => {
+  const map = {
+    'paid': { text: 'Paid', color: 'success' },
+    'pending': { text: 'Pending', color: 'warning' },
+    'cancelled': { text: 'Cancelled', color: 'secondary' },
+    'failed': { text: 'Failed', color: 'error' },
+  }
+
+  
+  return map[status?.toLowerCase()] || { text: status, color: 'default' }
 }
 
+// Resolve delivery status
 const resolveStatus = status => {
-  if (status === 'Delivered')
-    return {
-      text: 'Delivered',
-      color: 'success',
-    }
-  if (status === 'Out for Delivery')
-    return {
-      text: 'Out for Delivery',
-      color: 'primary',
-    }
-  if (status === 'Ready to Pickup')
-    return {
-      text: 'Ready to Pickup',
-      color: 'info',
-    }
-  if (status === 'Dispatched')
-    return {
-      text: 'Dispatched',
-      color: 'warning',
-    }
+  const map = {
+    'Delivered': { text: 'Delivered', color: 'success' },
+    'Out for Delivery': { text: 'Out for Delivery', color: 'primary' },
+    'Ready to Pickup': { text: 'Ready to Pickup', color: 'info' },
+    'Dispatched': { text: 'Dispatched', color: 'warning' },
+  }
+
+  
+  return map[status] || { text: status, color: 'default' }
 }
 
-const userData = {
+onMounted(async () => {
+  await useOrder.fetchOrderById(route.params.id)
+  orderData.value = useOrder.orderSingleData
+  totalAmount.value = orderData.value?.totalAmount
+  trackingSteps.value = orderData.value?.trackingSteps
+
+  // Process product list
+  orderDetail.value = orderData.value?.orderItems?.map(item => ({
+    productName: item.Product?.name || 'N/A',
+    productImage: `${baseUrl}${item.Product?.imageUrl?.[0] || ''}`,
+    subtitle: item.Product?.description || '',
+    price: parseFloat(item.Product?.price || 0).toFixed(2),
+    quantity: item.quantity,
+    total: parseFloat(item.price || 0).toFixed(2),
+  })) || []
+})
+
+// User & billing data (update dynamically if needed)
+const userData = ref({
   id: null,
-  fullName: orderData.value?.customer,
-  company: 'Pixinvent',
-  role: 'Web developer',
-  username: 'T1940',
-  country: 'United States',
-  contact: '+1 (609) 972-22-22',
-  email: orderData.value?.email,
+  fullName: orderData.value?.User?.name || '',
+  email: orderData.value?.User?.email || '',
+  contact: orderData.value?.User?.phone || '',
+  avatar: orderData.value?.User?.coverImage ? `${baseUrl}${orderData.value?.User?.coverImage}` : '',
   status: 'Active',
   taxId: 'Tax-8894',
   language: 'English',
   currentPlan: '',
-  avatar: '',
-  taskDone: null,
-  projectDone: null,
-}
+})
 
-const currentBillingAddress = {
-  fullName: orderData.value?.customer,
-  firstName: orderData.value?.customer.split(' ')[0],
-  lastName: orderData.value?.customer.split(' ')[1],
-  selectedCountry: 'USA',
-  addressLine1: '45 Rocker Terrace',
-  addressLine2: 'Latheronwheel',
-  landmark: 'KW5 8NW, London',
-  contact: '+1 (609) 972-22-22',
-  country: 'USA',
-  city: 'London',
-  state: 'London',
-  zipCode: 110001,
-}
-
-const orderDetail = [
-  {
-    productName: 'OnePlus 7 Pro',
-    productImage: product21,
-    subtitle: 'Storage: 128gb',
-    price: 799,
-    quantity: 1,
-    total: 799,
-  },
-  {
-    productName: 'Face Cream',
-    productImage: product22,
-    subtitle: 'Gender: Women',
-    price: 89,
-    quantity: 1,
-    total: 89,
-  },
-  {
-    productName: 'Wooden Chair',
-    productImage: product23,
-    subtitle: 'Material: Woodem',
-    price: 289,
-    quantity: 2,
-    total: 578,
-  },
-  {
-    productName: 'Nike Jorden',
-    productImage: product24,
-    subtitle: 'Size: 8UK',
-    price: 299,
-    quantity: 2,
-    total: 598,
-  },
-]
+const currentBillingAddress = ref({
+  fullName: orderData.value?.address?.fullName || '',
+  firstName: orderData.value?.address?.fullName?.split(' ')[0] || '',
+  lastName: orderData.value?.address?.fullName?.split(' ')[1] || '',
+  selectedCountry: 'Cambodia',
+  addressLine1: orderData.value?.address?.street || '',
+  landmark: orderData.value?.address?.fullName || '',
+  contact: orderData.value?.address?.phoneNumber || '',
+})
 </script>
 
 <template>
@@ -155,16 +99,8 @@ const orderDetail = [
           <h5 class="text-h5">
             Order #{{ route.params.id }}
           </h5>
+
           <div class="d-flex gap-x-2">
-            <VChip
-              v-if="orderData?.payment"
-              variant="tonal"
-              :color="resolvePaymentStatus(orderData.payment)?.color"
-              label
-              size="small"
-            >
-              {{ resolvePaymentStatus(orderData.payment)?.text }}
-            </VChip>
             <VChip
               v-if="orderData?.status"
               v-bind="resolveStatus(orderData?.status)"
@@ -173,26 +109,29 @@ const orderDetail = [
             />
           </div>
         </div>
+
         <div class="text-body-1">
-          Aug 17, 2020, 5:48 (ET)
+          {{ new Date(orderData?.createdAt).toLocaleString() }}
         </div>
       </div>
 
+
       <VBtn
         variant="tonal"
-        color="error"
-        @click="isConfirmDialogVisible = !isConfirmDialogVisible"
+        color="success"
+        v-if="orderData?.status !== 'cancelled'"
+        @click="isConfirmDialogVisible = true"
       >
-        Delete Order
+        Approved Order
       </VBtn>
     </div>
 
     <VRow>
+      <!-- LEFT: Order Detail -->
       <VCol
         cols="12"
         md="8"
       >
-        <!-- 👉 Order Details -->
         <VCard class="mb-6">
           <VCardItem>
             <template #title>
@@ -200,14 +139,11 @@ const orderDetail = [
                 Order Details
               </h5>
             </template>
-            <template #append>
-              <div class="text-base font-weight-medium text-primary cursor-pointer">
-                Edit
-              </div>
-            </template>
+            <template #append />
           </VCardItem>
 
           <VDivider />
+
           <VDataTable
             :headers="headers"
             :items="orderDetail"
@@ -222,39 +158,26 @@ const orderDetail = [
                   :image="item.productImage"
                   :rounded="0"
                 />
-
                 <div class="d-flex flex-column align-start">
                   <h6 class="text-h6">
                     {{ item.productName }}
                   </h6>
-
-                  <span class="text-body-2">
-                    {{ item.subtitle }}
-                  </span>
+                  <span class="text-body-2">{{ item.subtitle }}</span>
                 </div>
               </div>
             </template>
-
             <template #item.price="{ item }">
-              <div class="text-body-1">
-                ${{ item.price }}
-              </div>
+              <div>${{ item.price }}</div>
             </template>
-
             <template #item.total="{ item }">
-              <div class="text-body-1">
-                ${{ item.total }}
-              </div>
+              <div>${{ item.total }}</div>
             </template>
-
             <template #item.quantity="{ item }">
-              <div class="text-body-1">
-                {{ item.quantity }}
-              </div>
+              <div>{{ item.quantity }}</div>
             </template>
-
             <template #bottom />
           </VDataTable>
+
           <VDivider />
 
           <VCardText>
@@ -266,27 +189,27 @@ const orderDetail = [
                       Subtotal:
                     </td>
                     <td class="font-weight-medium">
-                      $2,093
+                      ${{ totalAmount }}
                     </td>
                   </tr>
                   <tr>
-                    <td>Shipping Total: </td>
+                    <td>Shipping Total:</td>
                     <td class="font-weight-medium">
-                      $2
+                      $0
                     </td>
                   </tr>
                   <tr>
-                    <td>Tax: </td>
+                    <td>Tax:</td>
                     <td class="font-weight-medium">
-                      $28
+                      $0
                     </td>
                   </tr>
                   <tr>
-                    <td class="text-high-emphasis font-weight-medium">
+                    <td class="font-weight-medium">
                       Total:
                     </td>
                     <td class="font-weight-medium">
-                      $2,113
+                      ${{ totalAmount }}
                     </td>
                   </tr>
                 </tbody>
@@ -295,7 +218,7 @@ const orderDetail = [
           </VCardText>
         </VCard>
 
-        <!-- 👉 Shipping Activity -->
+        <!-- Shipping Activity -->
         <VCard title="Shipping Activity">
           <VCardText>
             <VTimeline
@@ -307,83 +230,21 @@ const orderDetail = [
               density="compact"
             >
               <VTimelineItem
+                v-for="(step, i) in trackingSteps"
+                :key="i"
                 dot-color="primary"
                 size="x-small"
               >
                 <div class="d-flex justify-space-between align-center">
                   <div class="app-timeline-title">
-                    Order was placed (Order ID: #32543)
+                    {{ step.status }}
                   </div>
                   <div class="app-timeline-meta">
-                    Tuesday 10:20 AM
+                    {{ new Date(step.timestamp).toLocaleString() }}
                   </div>
                 </div>
-                <p class="app-timeline-text mb-0 mt-3">
-                  Your order has been placed successfully
-                </p>
-              </VTimelineItem>
-
-              <VTimelineItem
-                dot-color="primary"
-                size="x-small"
-              >
-                <div class="d-flex justify-space-between align-center">
-                  <span class="app-timeline-title">Pick-up</span>
-                  <span class="app-timeline-meta">Wednesday 11:29 AM</span>
-                </div>
-                <p class="app-timeline-text mb-0 mt-3">
-                  Pick-up scheduled with courier
-                </p>
-              </VTimelineItem>
-
-              <VTimelineItem
-                dot-color="primary"
-                size="x-small"
-              >
-                <div class="d-flex justify-space-between align-center">
-                  <span class="app-timeline-title">Dispatched</span>
-                  <span class="app-timeline-meta">Thursday 8:15 AM</span>
-                </div>
-                <p class="app-timeline-text mb-0 mt-3">
-                  Item has been picked up by courier.
-                </p>
-              </VTimelineItem>
-
-              <VTimelineItem
-                dot-color="primary"
-                size="x-small"
-              >
-                <div class="d-flex justify-space-between align-center">
-                  <span class="app-timeline-title">Package arrived</span>
-                  <span class="app-timeline-meta">Saturday 15:20 AM</span>
-                </div>
-                <p class="app-timeline-text mb-0 mt-3">
-                  Package arrived at an Amazon facility, NY
-                </p>
-              </VTimelineItem>
-
-              <VTimelineItem
-                dot-color="primary"
-                size="x-small"
-              >
-                <div class="d-flex justify-space-between align-center">
-                  <span class="app-timeline-title">Dispatched for delivery</span>
-                  <span class="app-timeline-meta">Today 14:12 PM</span>
-                </div>
-                <p class="app-timeline-text mb-0 mt-3">
-                  Package has left an Amazon facility , NY
-                </p>
-              </VTimelineItem>
-
-              <VTimelineItem
-                dot-color="secondary"
-                size="x-small"
-              >
-                <div class="d-flex justify-space-between align-center">
-                  <span class="app-timeline-title">Delivery</span>
-                </div>
-                <p class="app-timeline-text mb-4 mt-3">
-                  Package will be delivered by tomorrow
+                <p class="app-timeline-text mt-3 mb-0">
+                  Status update: {{ step.status }}
                 </p>
               </VTimelineItem>
             </VTimeline>
@@ -391,11 +252,11 @@ const orderDetail = [
         </VCard>
       </VCol>
 
+      <!-- RIGHT: Customer + Address -->
       <VCol
         cols="12"
         md="4"
       >
-        <!-- 👉 Customer Details  -->
         <VCard class="mb-6">
           <VCardText class="d-flex flex-column gap-y-6">
             <h5 class="text-h5">
@@ -404,108 +265,84 @@ const orderDetail = [
 
             <div class="d-flex align-center">
               <VAvatar
-                v-if="orderData"
-                :variant="!orderData?.avatar.length ? 'tonal' : undefined"
+                :image="baseUrl + orderData?.User?.coverImage"
                 :rounded="1"
                 class="me-3"
-              >
-                <VImg
-                  v-if="orderData?.avatar"
-                  :src="orderData?.avatar"
-                />
-
-                <span
-                  v-else
-                  class="font-weight-medium"
-                >{{ avatarText(orderData?.customer) }}</span>
-              </VAvatar>
+              />
               <div>
                 <h6 class="text-h6">
-                  {{ orderData?.customer }}
+                  {{ orderData?.User?.name }}
                 </h6>
                 <div class="text-body-1">
-                  Customer ID: #{{ orderData?.order }}
+                  Customer ID: #{{ orderData?.User?.id }}
                 </div>
               </div>
             </div>
 
-            <div class="d-flex gap-x-3 align-center">
-              <VAvatar
-                variant="tonal"
-                color="success"
-              >
-                <VIcon icon="tabler-shopping-cart" />
-              </VAvatar>
+            <div class="d-flex justify-space-between align-center">
               <h6 class="text-h6">
-                12 Orders
+                Contact Info
               </h6>
             </div>
 
-            <div class="d-flex flex-column gap-y-1">
-              <div class="d-flex justify-space-between align-center">
-                <h6 class="text-h6">
-                  Contact Info
-                </h6>
-                <div
-                  class="text-base text-primary cursor-pointer font-weight-medium"
-                  @click="isUserInfoEditDialogVisible = !isUserInfoEditDialogVisible"
-                >
-                  Edit
-                </div>
-              </div>
-              <span>Email: {{ orderData?.email }}</span>
-              <span>Mobile: +1 (609) 972-22-22</span>
-            </div>
+            <span>Email: {{ orderData?.User?.email }}</span>
+            <span>Mobile: {{ orderData?.User?.phone }}</span>
           </VCardText>
         </VCard>
 
-        <!-- 👉 Shipping Address -->
+        <!-- Address -->
         <VCard class="mb-6">
           <VCardItem>
             <VCardTitle>Shipping Address</VCardTitle>
-            <template #append>
-              <div class="d-flex align-center justify-space-between">
-                <div
-                  class="text-base font-weight-medium text-primary cursor-pointer"
-                  @click="isEditAddressDialogVisible = !isEditAddressDialogVisible"
-                >
-                  Edit
-                </div>
-              </div>
-            </template>
+            <template #append />
           </VCardItem>
-
           <VCardText>
             <div class="text-body-1">
-              45 Rocker Terrace <br> Latheronwheel <br> KW5 8NW, London <br> UK
+              {{ orderData?.address?.street }}
+              <br>
+              Phone: {{ orderData?.address?.phoneNumber }}
+              <br>
+              Name: {{ orderData?.address?.fullName }}
             </div>
           </VCardText>
         </VCard>
 
-        <!-- 👉 Billing Address -->
+        <!-- Billing Info -->
         <VCard>
           <VCardText>
             <div class="d-flex align-center justify-space-between mb-2">
               <h5 class="text-h5">
                 Billing Address
               </h5>
-              <div
-                class="text-base font-weight-medium text-primary cursor-pointer"
-                @click="isEditAddressDialogVisible = !isEditAddressDialogVisible"
-              >
-                Edit
-              </div>
             </div>
             <div>
-              45 Rocker Terrace <br> Latheronwheel <br> KW5 8NW, London <br> UK
+              {{ orderData?.address?.street }}
+              <br>
+              Name: {{ orderData?.address?.fullName }}
+              <br>
+              Phone: {{ orderData?.address?.phoneNumber }}
             </div>
 
             <div class="mt-6">
-              <h5 class="text-h5 mb-1">
-                Mastercard
-              </h5>
+              <div class="d-flex gap-x-2 gap-y-3 align-center">
+                <h5 class="text-h5 mb-1">
+                  Payment
+                </h5>
+                <VChip
+                  v-if="orderData?.Transaction?.status"
+                  variant="tonal"
+                  :color="resolvePaymentStatus(orderData.Transaction.status)?.color"
+                  label
+                  size="small"
+                >
+                  {{ resolvePaymentStatus(orderData.Transaction.status)?.text }}
+                </VChip>
+              </div>
               <div class="text-body-1">
-                Card Number: ******{{ orderData?.methodNumber }}
+                Method: {{ orderData?.Transaction?.paymentType }}
+              </div>
+              <div class="text-body-1">
+                Billing Number: {{ orderData?.billingNumber }}
               </div>
             </div>
           </VCardText>
@@ -513,6 +350,7 @@ const orderDetail = [
       </VCol>
     </VRow>
 
+    <!-- Dialogs -->
     <ConfirmDialog
       v-model:is-dialog-visible="isConfirmDialogVisible"
       confirmation-question="Are you sure to cancel your Order?"
@@ -521,7 +359,6 @@ const orderDetail = [
       confirm-msg="Your order cancelled successfully."
       confirm-title="Cancelled!"
     />
-
     <UserInfoEditDialog
       v-model:is-dialog-visible="isUserInfoEditDialogVisible"
       :user-data="userData"
@@ -533,3 +370,4 @@ const orderDetail = [
     />
   </div>
 </template>
+

@@ -10,6 +10,7 @@ export const useOrderStore = defineStore('userOrder', () => {
   const page = ref(1) // Current page
   const sortBy = ref()
   const orderBy = ref()
+  const orderSingleData = ref()
   const selectedRows = ref([])
   const currentOrderData = ref([])
 
@@ -49,6 +50,7 @@ export const useOrderStore = defineStore('userOrder', () => {
         },
       }))
 
+        console.log(data)
       // Assign the fetched data to the correct categories
       orderData.value = {
         pending: data.value.pending.orders || [],
@@ -155,6 +157,18 @@ export const useOrderStore = defineStore('userOrder', () => {
     }
   }
 
+  const fetchOrderById = async orderId => {
+    try {
+      const { data } = await useApi(createUrl(`/product/orders/${orderId}/detail` ))
+
+      console.log(data)
+      orderSingleData.value = data.value
+    } catch (error) {
+      console.error('Error fetching orders:', error)
+    }
+  }
+
+  
   return {
     searchQuery,
     itemsPerPage,
@@ -175,5 +189,7 @@ export const useOrderStore = defineStore('userOrder', () => {
     orderData,
     status,
     currentOrderData,
+    fetchOrderById,
+    orderSingleData,
   }
 })

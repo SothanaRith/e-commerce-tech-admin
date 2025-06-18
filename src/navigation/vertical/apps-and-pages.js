@@ -15,24 +15,7 @@ export default [
     title: 'Order', icon: { icon: 'tabler-shopping-cart' },
     children: [
       { title: 'List', to: 'apps-ecommerce-order-list', icon: { icon: 'tabler-list' } },
-
-      { title: 'Details', to: { name: 'apps-ecommerce-order-details-id', params: { id: '9042' }, icon: { icon: 'tabler-info-circle' } } },
     ],
-  },
-  {
-    title: 'Manage Review',
-    to: 'apps-ecommerce-manage-review',
-    icon: { icon: 'tabler-star' },
-  },
-  {
-    title: 'Referrals',
-    to: 'apps-ecommerce-referrals',
-    icon: { icon: 'tabler-user-plus' },
-  },
-  {
-    title: 'Settings',
-    to: 'apps-ecommerce-settings',
-    icon: { icon: 'tabler-settings' },
   },
   {
     title: 'Invoice',
@@ -50,14 +33,6 @@ export default [
     children: [
       { title: 'List', to: 'apps-user-list' },
       { title: 'View', to: { name: 'apps-user-view-id', params: { id: 21 } } },
-    ],
-  },
-  {
-    title: 'Roles & Permissions',
-    icon: { icon: 'tabler-lock' },
-    children: [
-      { title: 'Roles', to: 'apps-roles' },
-      { title: 'Permissions', to: 'apps-permissions' },
     ],
   },
 ]
