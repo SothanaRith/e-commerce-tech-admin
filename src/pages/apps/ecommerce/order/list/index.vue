@@ -338,12 +338,7 @@ const updateOrderStatus = async (id, orderStatus) => {
             </VAvatar>
             <div class="d-flex flex-column">
               <div class="text-body-1 font-weight-medium">
-                <RouterLink
-                  :to="{ name: 'pages-user-profile-tab', params: { tab: 'profile' } }"
-                  class="text-link"
-                >
-                  {{ item.paymentType }}
-                </RouterLink>
+                {{ item.paymentType }}
               </div>
             </div>
           </div>
