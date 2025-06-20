@@ -75,8 +75,10 @@ export const useProductStore = defineStore('userProduct', () => {
     await $api('/product/create-product', {
       method: 'POST',
       body: formData,
-      headers: { 'Content-Type': 'multipart/form-data', 'Accept': 'application/json' },
+
+      // ✅ Let the browser set the correct multipart/form-data headers
     })
+
     await fetchProduct()
   }
 

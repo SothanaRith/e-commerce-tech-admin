@@ -41,27 +41,26 @@ watch(productName, newVal => {
 const addProduct = async () => {
   const formData = new FormData()
 
-  // Append images
   uploadedFiles.value.forEach(file => {
     formData.append('images', file)
   })
 
-  // Append other fields
-  formData.append('categoryId', productCategory.value ?? [1, 2])
+  formData.append('categoryId', productCategory.value ?? '1')
   formData.append('name', productName.value)
   formData.append('description', productDescription.value)
   formData.append('price', productPrice.value)
 
-  formData.append('variants[0][stock]', JSON.stringify(productStock.value))
-  formData.append('variants[0][sku]', JSON.stringify(productStock.value))
-  formData.append('variants[0][price]', JSON.stringify(productPrice.value))
-  formData.append('variants[0][attributes][0][name]', JSON.stringify("Color"))
-  formData.append('variants[0][attributes][0][value]', JSON.stringify("Black"))
-  formData.append('variants[0][attributes][1][name]', JSON.stringify("Size"))
-  formData.append('variants[0][attributes][1][value]', JSON.stringify("M"))
+  // Correct variant formatting
+  formData.append('variants[0][stock]', productStock.value)
+  formData.append('variants[0][sku]', productSKU.value)
+  formData.append('variants[0][price]', productPrice.value)
+  formData.append('variants[0][attributes][0][name]', 'Color')
+  formData.append('variants[0][attributes][0][value]', 'Black')
+  formData.append('variants[0][attributes][1][name]', 'Size')
+  formData.append('variants[0][attributes][1][value]', 'M')
+
   formData.append('relatedProductIds', JSON.stringify(relatedProducts.value))
 
-  // Call store
   await useProduct.addProduct(formData)
 }
 </script>
