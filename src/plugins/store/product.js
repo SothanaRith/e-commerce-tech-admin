@@ -5,84 +5,116 @@ import { createUrl } from "@core/composable/createUrl"
 
 export const useProductStore = defineStore('userProduct', () => {
   const searchQuery = ref('')
+  const selectedCategory = ref()
+  const selectedStatus = ref()
+  const selectedStock = ref()
   const itemsPerPage = ref(10)
   const page = ref(1)
   const sortBy = ref()
   const orderBy = ref()
   const selectedRows = ref([])
-  const productData = ref(null)
+
+  const product = ref([])
+  const category = ref([])
+  const totalProduct = ref(0)
+
+  const productName = ref('')
+  const productSKU = ref('')
+  const productPrice = ref(499)
+  const productDescription = ref('<p>Product description</p>')
+  const productCategory = ref(null)
+  const relatedProducts = ref([])
+
+  const productVariants = ref([
+    {
+      sku: '',
+      price: 0,
+      stock: 0,
+      attributes: [{ name: '', value: '' }],
+    },
+  ])
 
   const fetchProduct = async () => {
-    const { data } = await useApi(createUrl('/product/get-all', {
+    const { data } = await useApi(createUrl('/product/search/1', {
       query: {
-        q: searchQuery,
-        sortBy,
-        orderBy,
+        query: searchQuery.value,
+        page: page.value,
+        size: itemsPerPage.value,
+        sortBy: sortBy.value,
+        orderBy: orderBy.value,
+        category: selectedCategory.value,
+        status: selectedStatus.value,
+        inStock: selectedStock.value,
       },
     }))
 
-    productData.value = data
+    product.value = data.value?.data || []
+    totalProduct.value = data.value?.pagination?.totalItems || 0
   }
 
-  const product = computed(() => productData.value?.value.data || [])
-  const totalProduct = computed(() => productData.value?.value.total || 0)
+  const fetchCategory = async () => {
+    const { data } = await useApi(createUrl('category/get-all-categories', {
+    }))
+
+    console.log(data)
+    category.value = data.value?.categories || []
+  }
 
   const updateOptions = options => {
     sortBy.value = options.sortBy[0]?.key
     orderBy.value = options.sortBy[0]?.order
   }
 
-  watch([searchQuery, sortBy, orderBy], async () => {
-    await fetchProduct()
-  }, { immediate: true })
+  watch(
+    [searchQuery, sortBy, orderBy, itemsPerPage, page, selectedCategory, selectedStatus, selectedStock],
+    fetchProduct,
+    { immediate: true },
+  )
 
-  // Add new product
-  const addProduct = async productData => {
-
+  const addProduct = async formData => {
     await $api('/product/create-product', {
       method: 'POST',
-      body: JSON.stringify(productData),
-      headers: { 'Content-Type': 'application/json' },
+      body: formData,
+      headers: { 'Content-Type': 'multipart/form-data', 'Accept': 'application/json' },
     })
-
     await fetchProduct()
   }
 
-  // Edit product
-  const editProduct = async (id, productData) => {
-
+  const editProduct = async (id, productDataInput) => {
     await $api(`/product/update-product/${id}`, {
       method: 'POST',
-      body: JSON.stringify(productData),
+      body: JSON.stringify(productDataInput),
       headers: { 'Content-Type': 'application/json' },
     })
-
     await fetchProduct()
   }
 
   const deleteProduct = async id => {
-
     await $api(`/product/delete/${id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     })
-
     await fetchProduct()
   }
 
   return {
     searchQuery,
+    selectedCategory,
+    selectedStatus,
+    selectedStock,
     itemsPerPage,
     page,
     sortBy,
     orderBy,
     selectedRows,
     product,
+    category,
     totalProduct,
     updateOptions,
     fetchProduct,
     addProduct,
     editProduct,
     deleteProduct,
+    fetchCategory,
   }
 })

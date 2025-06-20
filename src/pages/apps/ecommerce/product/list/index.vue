@@ -1,135 +1,42 @@
 <script setup>
-const widgetData = ref([
-  {
-    title: 'In-Store Sales',
-    value: '$5,345',
-    icon: 'tabler-smart-home',
-    desc: '5k orders',
-    change: 5.7,
-  },
-  {
-    title: 'Website Sales',
-    value: '$674,347',
-    icon: 'tabler-device-laptop',
-    desc: '21k orders',
-    change: 12.4,
-  },
-  {
-    title: 'Discount',
-    value: '$14,235',
-    icon: 'tabler-gift',
-    desc: '6k orders',
-  },
-  {
-    title: 'Affiliate',
-    value: '$8,345',
-    icon: 'tabler-wallet',
-    desc: '150 orders',
-    change: -3.5,
-  },
-])
+import { ref, computed } from 'vue'
+import { useProductStore } from "@/plugins/store/product"
 
 const headers = [
-  {
-    title: 'Product',
-    key: 'product',
-  },
-  {
-    title: 'Category',
-    key: 'category',
-  },
-  {
-    title: 'Stock',
-    key: 'stock',
-    sortable: false,
-  },
-  {
-    title: 'SKU',
-    key: 'sku',
-  },
-  {
-    title: 'Price',
-    key: 'price',
-  },
-  {
-    title: 'QTY',
-    key: 'qty',
-  },
-  {
-    title: 'Status',
-    key: 'status',
-  },
-  {
-    title: 'Actions',
-    key: 'actions',
-    sortable: false,
-  },
+  { title: 'Product', key: 'product' },
+  { title: 'Category', key: 'category' },
+  { title: 'Stock', key: 'stock', sortable: false },
+  { title: 'SKU', key: 'sku' },
+  { title: 'Price', key: 'price' },
+  { title: 'QTY', key: 'qty' },
+  { title: 'Status', key: 'status' },
+  { title: 'Actions', key: 'actions', sortable: false },
 ]
 
 const selectedStatus = ref()
 const selectedCategory = ref()
 const selectedStock = ref()
-const searchQuery = ref('')
 const selectedRows = ref([])
 
 const status = ref([
-  {
-    title: 'Scheduled',
-    value: 'Scheduled',
-  },
-  {
-    title: 'Publish',
-    value: 'Published',
-  },
-  {
-    title: 'Inactive',
-    value: 'Inactive',
-  },
+  { title: 'Scheduled', value: 'Scheduled' },
+  { title: 'Publish', value: 'Published' },
+  { title: 'Inactive', value: 'Inactive' },
 ])
 
 const categories = ref([
-  {
-    title: 'Accessories',
-    value: 'Accessories',
-  },
-  {
-    title: 'Home Decor',
-    value: 'Home Decor',
-  },
-  {
-    title: 'Electronics',
-    value: 'Electronics',
-  },
-  {
-    title: 'Shoes',
-    value: 'Shoes',
-  },
-  {
-    title: 'Office',
-    value: 'Office',
-  },
-  {
-    title: 'Games',
-    value: 'Games',
-  },
+  { title: 'Accessories', value: 'Accessories' },
+  { title: 'Home Decor', value: 'Home Decor' },
+  { title: 'Electronics', value: 'Electronics' },
+  { title: 'Shoes', value: 'Shoes' },
+  { title: 'Office', value: 'Office' },
+  { title: 'Games', value: 'Games' },
 ])
 
 const stockStatus = ref([
-  {
-    title: 'In Stock',
-    value: true,
-  },
-  {
-    title: 'Out of Stock',
-    value: false,
-  },
+  { title: 'In Stock', value: true },
+  { title: 'Out of Stock', value: false },
 ])
-
-// Data table options
-const itemsPerPage = ref(10)
-const page = ref(1)
-const sortBy = ref()
-const orderBy = ref()
 
 const updateOptions = options => {
   sortBy.value = options.sortBy[0]?.key
@@ -137,219 +44,79 @@ const updateOptions = options => {
 }
 
 const resolveCategory = category => {
-  if (category === 'Accessories')
-    return {
-      color: 'error',
-      icon: 'tabler-device-watch',
-    }
-  if (category === 'Home Decor')
-    return {
-      color: 'info',
-      icon: 'tabler-home',
-    }
-  if (category === 'Electronics')
-    return {
-      color: 'primary',
-      icon: 'tabler-device-imac',
-    }
-  if (category === 'Shoes')
-    return {
-      color: 'success',
-      icon: 'tabler-shoe',
-    }
-  if (category === 'Office')
-    return {
-      color: 'warning',
-      icon: 'tabler-briefcase',
-    }
-  if (category === 'Games')
-    return {
-      color: 'primary',
-      icon: 'tabler-device-gamepad-2',
-    }
+  if (category === 'Accessories') return { color: 'error', icon: 'tabler-device-watch' }
+  if (category === 'Home Decor') return { color: 'info', icon: 'tabler-home' }
+  if (category === 'Electronics') return { color: 'primary', icon: 'tabler-device-imac' }
+  if (category === 'Shoes') return { color: 'success', icon: 'tabler-shoe' }
+  if (category === 'Office') return { color: 'warning', icon: 'tabler-briefcase' }
+  if (category === 'Games') return { color: 'primary', icon: 'tabler-device-gamepad-2' }
 }
 
 const resolveStatus = statusMsg => {
-  if (statusMsg === 'Scheduled')
-    return {
-      text: 'Scheduled',
-      color: 'warning',
-    }
-  if (statusMsg === 'Published')
-    return {
-      text: 'Publish',
-      color: 'success',
-    }
-  if (statusMsg === 'Inactive')
-    return {
-      text: 'Inactive',
-      color: 'error',
-    }
+  if (statusMsg === 'Scheduled') return { text: 'Scheduled', color: 'warning' }
+  if (statusMsg === 'Published') return { text: 'Publish', color: 'success' }
+  if (statusMsg === 'Inactive') return { text: 'Inactive', color: 'error' }
 }
 
-const {
-  data: productsData,
-  execute: fetchProducts,
-} = await useApi(createUrl('/apps/ecommerce/products', {
-  query: {
-    q: searchQuery,
-    stock: selectedStock,
-    category: selectedCategory,
-    status: selectedStatus,
-    page,
-    itemsPerPage,
-    sortBy,
-    orderBy,
-  },
-}))
+const useProduct = useProductStore()
 
-const products = computed(() => productsData.value.products)
-const totalProduct = computed(() => productsData.value.total)
+await useProduct.fetchProduct()
+
+// optional map of categoryId to label
+const categoryMap = {
+  1: 'Electronics',
+  2: 'Shoes',
+  3: 'Accessories',
+
+  // extend as needed
+}
+
+const { itemsPerPage, searchQuery, page, sortBy, orderBy } = storeToRefs(useProduct)
+
+const products = computed(() =>
+  useProduct.product.map(product => ({
+    id: product.id,
+    productName: product.name,
+    productBrand: 'Smartwatch', // static or dynamic if available
+    category: categoryMap[product.categoryId] || 'Uncategorized',
+    stock: product.totalStock > 0,
+    sku: `SKU-${product.id}`, // example SKU
+    price: `$${parseFloat(product.price).toFixed(2)}`,
+    qty: product.totalStock,
+    status: product.totalStock > 0 ? 'Published' : 'Inactive',
+    images: product.imageUrl,
+  })),
+)
+
+watch(
+  [selectedStatus, selectedCategory, selectedStock, searchQuery, itemsPerPage, page],
+  async () => {
+
+    await useProduct.fetchProduct()
+
+    console.log(useProduct.product)
+
+  }, { immediate: true },
+)
+
+// Transform product data to match table structure
+
+
+const totalProduct = computed(() => useProduct.totalProduct)
 
 const deleteProduct = async id => {
-  await $api(`apps/ecommerce/products/${ id }`, { method: 'DELETE' })
-
-  // Delete from selectedRows
-  const index = selectedRows.value.findIndex(row => row === id)
-  if (index !== -1)
-    selectedRows.value.splice(index, 1)
-
-  // Refetch products
-  fetchProducts()
+  await useProduct.deleteProduct(id)
 }
 </script>
 
 <template>
   <div>
-    <!-- 👉 widgets -->
-    <VCard class="mb-6">
-      <VCardText class="px-3">
-        <VRow>
-          <template
-            v-for="(data, id) in widgetData"
-            :key="id"
-          >
-            <VCol
-              cols="12"
-              sm="6"
-              md="3"
-              class="px-6"
-            >
-              <div
-                class="d-flex justify-space-between"
-                :class="$vuetify.display.xs
-                  ? id !== widgetData.length - 1 ? 'border-b pb-4' : ''
-                  : $vuetify.display.sm
-                    ? id < (widgetData.length / 2) ? 'border-b pb-4' : ''
-                    : ''"
-              >
-                <div class="d-flex flex-column gap-y-1">
-                  <div class="text-body-1 text-capitalize">
-                    {{ data.title }}
-                  </div>
-
-                  <h4 class="text-h4">
-                    {{ data.value }}
-                  </h4>
-
-                  <div class="d-flex align-center gap-x-2">
-                    <div class="text-no-wrap">
-                      {{ data.desc }}
-                    </div>
-
-                    <VChip
-                      v-if="data.change"
-                      label
-                      :color="data.change > 0 ? 'success' : 'error'"
-                      size="small"
-                    >
-                      {{ prefixWithPlus(data.change) }}%
-                    </VChip>
-                  </div>
-                </div>
-
-                <VAvatar
-                  variant="tonal"
-                  rounded
-                  size="44"
-                >
-                  <VIcon
-                    :icon="data.icon"
-                    size="28"
-                    class="text-high-emphasis"
-                  />
-                </VAvatar>
-              </div>
-            </VCol>
-            <VDivider
-              v-if="$vuetify.display.mdAndUp ? id !== widgetData.length - 1
-                : $vuetify.display.smAndUp ? id % 2 === 0
-                  : false"
-              vertical
-              inset
-              length="92"
-            />
-          </template>
-        </VRow>
-      </VCardText>
-    </VCard>
 
     <!-- 👉 products -->
-    <VCard
-      title="Filters"
-      class="mb-6"
-    >
-      <VCardText>
-        <VRow>
-          <!-- 👉 Select Status -->
-          <VCol
-            cols="12"
-            sm="4"
-          >
-            <AppSelect
-              v-model="selectedStatus"
-              placeholder="Status"
-              :items="status"
-              clearable
-              clear-icon="tabler-x"
-            />
-          </VCol>
-
-          <!-- 👉 Select Category -->
-          <VCol
-            cols="12"
-            sm="4"
-          >
-            <AppSelect
-              v-model="selectedCategory"
-              placeholder="Category"
-              :items="categories"
-              clearable
-              clear-icon="tabler-x"
-            />
-          </VCol>
-
-          <!-- 👉 Select Stock Status -->
-          <VCol
-            cols="12"
-            sm="4"
-          >
-            <AppSelect
-              v-model="selectedStock"
-              placeholder="Stock"
-              :items="stockStatus"
-              clearable
-              clear-icon="tabler-x"
-            />
-          </VCol>
-        </VRow>
-      </VCardText>
-
+    <VCard class="mb-6">
       <VDivider />
-
       <div class="d-flex flex-wrap gap-4 ma-6">
         <div class="d-flex align-center">
-          <!-- 👉 Search  -->
           <AppTextField
             v-model="searchQuery"
             placeholder="Search Product"
@@ -359,12 +126,12 @@ const deleteProduct = async id => {
         </div>
 
         <VSpacer />
+
         <div class="d-flex gap-4 flex-wrap align-center">
           <AppSelect
             v-model="itemsPerPage"
             :items="[5, 10, 20, 25, 50]"
           />
-          <!-- 👉 Export button -->
           <VBtn
             variant="tonal"
             color="secondary"
@@ -372,7 +139,6 @@ const deleteProduct = async id => {
           >
             Export
           </VBtn>
-
           <VBtn
             color="primary"
             prepend-icon="tabler-plus"
@@ -385,7 +151,7 @@ const deleteProduct = async id => {
 
       <VDivider class="mt-4" />
 
-      <!-- 👉 Datatable  -->
+      <!-- 👉 Datatable -->
       <VDataTableServer
         v-model:items-per-page="itemsPerPage"
         v-model:model-value="selectedRows"
@@ -397,7 +163,7 @@ const deleteProduct = async id => {
         class="text-no-wrap"
         @update:options="updateOptions"
       >
-        <!-- product  -->
+        <!-- product -->
         <template #item.product="{ item }">
           <div class="d-flex align-center gap-x-4">
             <VAvatar
@@ -432,7 +198,10 @@ const deleteProduct = async id => {
 
         <!-- stock -->
         <template #item.stock="{ item }">
-          <VSwitch :model-value="item.stock" />
+          <VSwitch
+            :model-value="item.stock"
+            disabled
+          />
         </template>
 
         <!-- status -->
@@ -445,7 +214,7 @@ const deleteProduct = async id => {
           />
         </template>
 
-        <!-- Actions -->
+        <!-- actions -->
         <template #item.actions="{ item }">
           <IconBtn>
             <VIcon icon="tabler-edit" />
@@ -461,7 +230,6 @@ const deleteProduct = async id => {
                 >
                   Download
                 </VListItem>
-
                 <VListItem
                   value="delete"
                   prepend-icon="tabler-trash"
@@ -469,7 +237,6 @@ const deleteProduct = async id => {
                 >
                   Delete
                 </VListItem>
-
                 <VListItem
                   value="duplicate"
                   prepend-icon="tabler-copy"

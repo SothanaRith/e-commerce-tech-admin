@@ -1,62 +1,69 @@
 <script setup>
 import { ref } from 'vue'
+import { useProductStore } from "@/plugins/store/product"
+import AppSelect from "@core/components/app-form-elements/AppSelect.vue";
 
-const optionCounter = ref(1)
-const activeTab = ref('Restock')
 const isTaxChargeToProduct = ref(true)
-
-const shippingList = [
-  {
-    desc: 'You\'ll be responsible for product delivery.Any damage or delay during shipping may cost you a Damage fee',
-    title: 'Fulfilled by Seller',
-    value: 'Fulfilled by Seller',
-  },
-  {
-    desc: 'Your product, Our responsibility.For a measly fee, we will handle the delivery process for you.',
-    title: 'Fulfilled by Company name',
-    value: 'Fulfilled by Company name',
-  },
-]
-
-const shippingType = ref('Fulfilled by Company name')
-const deliveryType = ref('Worldwide delivery')
-
-const selectedAttrs = ref([
-  'Biodegradable',
-  'Expiry Date',
-])
-
-const inventoryTabsData = [
-  {
-    icon: 'tabler-cube',
-    title: 'Restock',
-    value: 'Restock',
-  },
-  {
-    icon: 'tabler-car',
-    title: 'Shipping',
-    value: 'Shipping',
-  },
-  {
-    icon: 'tabler-map-pin',
-    title: 'Global Delivery',
-    value: 'Global Delivery',
-  },
-  {
-    icon: 'tabler-world',
-    title: 'Attributes',
-    value: 'Attributes',
-  },
-  {
-    icon: 'tabler-lock',
-    title: 'Advanced',
-    value: 'Advanced',
-  },
-]
 
 const content = ref(`<p>
     Keep your account secure with authentication step.
     </p>`)
+
+const useProduct = useProductStore()
+
+onMounted(async () => {
+  await useProduct.fetchProduct()
+  await useProduct.fetchCategory()
+})
+
+const uploadedFiles = ref([])
+const relatedProducts = ref([])
+const productCategory = ref([])
+const productPrice = ref()
+const productSKU = ref()
+const productStock = ref()
+const productDescription = ref()
+const productName = ref()
+
+const generateSKU = (prefix = 'SKU') => {
+  const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase()
+  const timestampPart = Date.now().toString().slice(-4)
+
+  productSKU.value = `${prefix}-${randomPart}-${timestampPart}`
+}
+
+watch(productName, newVal => {
+  if (newVal && newVal.length > 3) {
+    generateSKU(newVal.slice(0, 5).toUpperCase())
+  }
+})
+
+const addProduct = async () => {
+  const formData = new FormData()
+
+  // Append images
+  uploadedFiles.value.forEach(file => {
+    formData.append('images', file)
+  })
+
+  // Append other fields
+  formData.append('categoryId', productCategory.value ?? [1, 2])
+  formData.append('name', productName.value)
+  formData.append('description', productDescription.value)
+  formData.append('price', productPrice.value)
+
+  formData.append('variants[0][stock]', JSON.stringify(productStock.value))
+  formData.append('variants[0][sku]', JSON.stringify(productStock.value))
+  formData.append('variants[0][price]', JSON.stringify(productPrice.value))
+  formData.append('variants[0][attributes][0][name]', JSON.stringify("Color"))
+  formData.append('variants[0][attributes][0][value]', JSON.stringify("Black"))
+  formData.append('variants[0][attributes][1][name]', JSON.stringify("Size"))
+  formData.append('variants[0][attributes][1][value]', JSON.stringify("M"))
+  formData.append('relatedProductIds', JSON.stringify(relatedProducts.value))
+
+  // Call store
+  await useProduct.addProduct(formData)
+}
 </script>
 
 <template>
@@ -78,13 +85,9 @@ const content = ref(`<p>
         >
           Discard
         </VBtn>
-        <VBtn
-          variant="tonal"
-          color="primary"
-        >
-          Save Draft
+        <VBtn @click="addProduct">
+          Publish Product
         </VBtn>
-        <VBtn>Publish Product</VBtn>
       </div>
     </div>
 
@@ -99,32 +102,23 @@ const content = ref(`<p>
             <VRow>
               <VCol cols="12">
                 <AppTextField
+                  v-model="productName"
                   label="Name"
                   placeholder="iPhone 14"
                 />
               </VCol>
-              <VCol
-                cols="12"
-                md="6"
-              >
+              <VCol cols="12">
                 <AppTextField
-                  label="SKU"
-                  placeholder="FXSK123U"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="6"
-              >
-                <AppTextField
-                  label="Barcode"
-                  placeholder="0123-4567"
+                  v-model="productSKU"
+                  label="Product SKU"
+                  readonly="true"
+                  placeholder="iPhone 14"
                 />
               </VCol>
               <VCol>
                 <span class="mb-1">Description (optional)</span>
                 <ProductDescriptionEditor
-                  v-model="content"
+                  v-model="productDescription"
                   placeholder="Product Description"
                   class="border rounded"
                 />
@@ -143,294 +137,8 @@ const content = ref(`<p>
               <span class="text-primary font-weight-medium text-sm cursor-pointer">Add Media from URL</span>
             </template>
           </VCardItem>
-
           <VCardText>
-            <DropZone />
-          </VCardText>
-        </VCard>
-
-        <!-- 👉 Variants -->
-        <VCard
-          title="Variants"
-          class="mb-6"
-        >
-          <VCardText>
-            <template
-              v-for="i in optionCounter"
-              :key="i"
-            >
-              <VRow>
-                <VCol
-                  cols="12"
-                  md="4"
-                >
-                  <AppSelect
-                    :items="['Size', 'Color', 'Weight']"
-                    placeholder="Select Variant"
-                    label="Options"
-                  />
-                </VCol>
-                <VCol
-                  cols="12"
-                  md="8"
-                  class="d-flex align-self-end"
-                >
-                  <AppTextField
-                    placeholder="38"
-                    type="number"
-                  />
-                </VCol>
-              </VRow>
-            </template>
-
-            <VBtn
-              class="mt-6"
-              prepend-icon="tabler-plus"
-              @click="optionCounter++"
-            >
-              Add another option
-            </VBtn>
-          </VCardText>
-        </VCard>
-
-        <!-- 👉 Inventory -->
-        <VCard
-          title="Inventory"
-          class="inventory-card"
-        >
-          <VCardText>
-            <VRow>
-              <VCol
-                cols="12"
-                md="4"
-              >
-                <div class="pe-3">
-                  <VTabs
-                    v-model="activeTab"
-                    direction="vertical"
-                    color="primary"
-                    class="v-tabs-pill"
-                  >
-                    <VTab
-                      v-for="(tab, index) in inventoryTabsData"
-                      :key="index"
-                    >
-                      <VIcon
-                        :icon="tab.icon"
-                        class="me-2"
-                      />
-                      <div class="text-truncate font-weight-medium text-start">
-                        {{ tab.title }}
-                      </div>
-                    </VTab>
-                  </VTabs>
-                </div>
-              </VCol>
-
-              <VDivider :vertical="!$vuetify.display.smAndDown" />
-
-              <VCol
-                cols="12"
-                md="8"
-              >
-                <VWindow
-                  v-model="activeTab"
-                  class="w-100"
-                  :touch="false"
-                >
-                  <VWindowItem value="Restock">
-                    <div class="d-flex flex-column gap-y-4 ps-3">
-                      <p class="mb-0">
-                        Options
-                      </p>
-
-                      <div class="d-flex gap-x-4 align-center">
-                        <AppTextField
-                          label="Add to Stock"
-                          placeholder="Quantity"
-                        />
-                        <VBtn class="align-self-end">
-                          Confirm
-                        </VBtn>
-                      </div>
-
-                      <div>
-                        <div class="text-base text-high-emphasis pb-2">
-                          Product in stock now: 54
-                        </div>
-                        <div class="text-base text-high-emphasis pb-2">
-                          Product in transit: 390
-                        </div>
-                        <div class="text-base text-high-emphasis pb-2">
-                          Last time restocked: 24th June, 2022
-                        </div>
-                        <div class="text-base text-high-emphasis pb-2">
-                          Total stock over lifetime: 2,430
-                        </div>
-                      </div>
-                    </div>
-                  </VWindowItem>
-
-                  <VWindowItem value="Shipping">
-                    <VRadioGroup
-                      v-model="shippingType"
-                      label="Shipping Type"
-                      class="ms-3"
-                    >
-                      <VRadio
-                        v-for="item in shippingList"
-                        :key="item.value"
-                        :value="item.value"
-                        class="mb-4"
-                      >
-                        <template #label>
-                          <div>
-                            <div class="text-high-emphasis font-weight-medium mb-1">
-                              {{ item.title }}
-                            </div>
-                            <div class="text-sm">
-                              {{ item.desc }}
-                            </div>
-                          </div>
-                        </template>
-                      </VRadio>
-                    </VRadioGroup>
-                  </VWindowItem>
-
-                  <VWindowItem value="Global Delivery">
-                    <div class="ps-3">
-                      <h5 class="text-h5 mb-6">
-                        Global Delivery
-                      </h5>
-
-                      <VRadioGroup
-                        v-model="deliveryType"
-                        label="Global Delivery"
-                      >
-                        <VRadio
-                          value="Worldwide delivery"
-                          class="mb-4"
-                        >
-                          <template #label>
-                            <div>
-                              <div class="text-high-emphasis font-weight-medium mb-1">
-                                Worldwide delivery
-                              </div>
-                              <div class="text-sm">
-                                Only available with Shipping method:
-                                <span class="text-primary">
-                                  Fulfilled by Company name
-                                </span>
-                              </div>
-                            </div>
-                          </template>
-                        </VRadio>
-
-                        <VRadio
-                          value="Selected Countries"
-                          class="mb-4"
-                        >
-                          <template #label>
-                            <div>
-                              <div class="text-high-emphasis font-weight-medium mb-1">
-                                Selected Countries
-                              </div>
-                              <VTextField
-                                placeholder="USA"
-                                style="min-inline-size: 200px;"
-                              />
-                            </div>
-                          </template>
-                        </VRadio>
-
-                        <VRadio>
-                          <template #label>
-                            <div>
-                              <div class="text-high-emphasis font-weight-medium mb-1">
-                                Local delivery
-                              </div>
-                              <div class="text-sm">
-                                Deliver to your country of residence
-                                <span class="text-primary">
-                                  Change profile address
-                                </span>
-                              </div>
-                            </div>
-                          </template>
-                        </VRadio>
-                      </VRadioGroup>
-                    </div>
-                  </VWindowItem>
-
-                  <VWindowItem value="Attributes">
-                    <div class="ps-3">
-                      <div class="mb-6 text-h6">
-                        Attributes
-                      </div>
-                      <div class="d-flex flex-column gap-y-1">
-                        <VCheckbox
-                          v-model="selectedAttrs"
-                          label="Fragile Product"
-                          value="Fragile Product"
-                        />
-                        <VCheckbox
-                          v-model="selectedAttrs"
-                          value="Biodegradable"
-                          label="Biodegradable"
-                        />
-                        <VCheckbox
-                          v-model="selectedAttrs"
-                          value="Frozen Product"
-                        >
-                          <template #label>
-                            <div class="d-flex flex-column mb-1">
-                              <div>Frozen Product</div>
-                              <VTextField
-                                placeholder="40 C"
-                                type="number"
-                              />
-                            </div>
-                          </template>
-                        </VCheckbox>
-                        <VCheckbox
-                          v-model="selectedAttrs"
-                          value="Expiry Date"
-                        >
-                          <template #label>
-                            <div class="d-flex flex-column mb-1">
-                              <div>Expiry Date of Product</div>
-                              <AppDateTimePicker
-                                model-value="2025-06-14"
-                                placeholder="Select a Date"
-                              />
-                            </div>
-                          </template>
-                        </VCheckbox>
-                      </div>
-                    </div>
-                  </VWindowItem>
-
-                  <VWindowItem value="Advanced">
-                    <div class="ps-3">
-                      <h5 class="text-h5 mb-6">
-                        Advanced
-                      </h5>
-                      <div class="d-flex flex-sm-row flex-column flex-wrap justify-space-between gap-x-6 gap-y-4">
-                        <AppSelect
-                          label="Product ID Type"
-                          placeholder="Select Product Type"
-                          :items="['ISBN', 'UPC', 'EAN', 'JAN']"
-                        />
-                        <AppTextField
-                          label="Product Id"
-                          placeholder="100023"
-                        />
-                      </div>
-                    </div>
-                  </VWindowItem>
-                </VWindow>
-              </VCol>
-            </VRow>
+            <DropZone @update:files="files => uploadedFiles = Array.from(files)" />
           </VCardText>
         </VCard>
       </VCol>
@@ -446,27 +154,11 @@ const content = ref(`<p>
         >
           <VCardText>
             <AppTextField
+              v-model="productPrice"
               label="Best Price"
               placeholder="Price"
               class="mb-6"
             />
-            <AppTextField
-              label="Discounted Price"
-              placeholder="$499"
-              class="mb-6"
-            />
-
-            <VCheckbox
-              v-model="isTaxChargeToProduct"
-              label="Charge Tax on this product"
-            />
-
-            <VDivider class="my-2" />
-
-            <div class="d-flex flex-raw align-center justify-space-between ">
-              <span>In stock</span>
-              <VSwitch density="compact" />
-            </div>
           </VCardText>
         </VCard>
 
@@ -474,11 +166,6 @@ const content = ref(`<p>
         <VCard title="Organize">
           <VCardText>
             <div class="d-flex flex-column gap-y-4">
-              <AppSelect
-                placeholder="Select Vendor"
-                label="Vendor"
-                :items="['Men\'s Clothing', 'Women\'s Clothing', 'Kid\'s Clothing']"
-              />
               <div>
                 <VLabel class="d-flex">
                   <div class="d-flex text-sm justify-space-between w-100">
@@ -487,32 +174,34 @@ const content = ref(`<p>
                     </div>
                   </div>
                 </VLabel>
-
                 <div class="d-flex gap-x-4">
                   <AppSelect
+                    v-model="productCategory"
+                    item-title="title"
+                    item-value="value"
+                    multiple
+                    chips
                     placeholder="Select Category"
-                    :items="['Household', 'Office', 'Electronics', 'Management', 'Automotive']"
-                  />
-                  <VBtn
-                    rounded
-                    icon="tabler-plus"
-                    variant="tonal"
+                    :items="useProduct.category.map(p => ({ title: p.name, value: p.id }))"
                   />
                 </div>
               </div>
+
+              <!-- ✅ Related Products -->
               <AppSelect
-                placeholder="Select Collection"
-                label="Collection"
-                :items="['Men\'s Clothing', 'Women\'s Clothing', 'Kid\'s Clothing']"
-              />
-              <AppSelect
-                placeholder="Select Status"
-                label="Status"
-                :items="['Published', 'Inactive', 'Scheduled']"
+                v-model="relatedProducts"
+                label="Related Products"
+                item-title="title"
+                item-value="value"
+                placeholder="Select Related Products"
+                :items="useProduct.product.map(p => ({ title: p.name, value: p.id }))"
+                multiple
+                chips
               />
               <AppTextField
-                label="Tags"
-                placeholder="Fashion, Trending, Summer"
+                v-model="productStock"
+                label="Add to Stock"
+                placeholder="Quantity"
               />
             </div>
           </VCardText>

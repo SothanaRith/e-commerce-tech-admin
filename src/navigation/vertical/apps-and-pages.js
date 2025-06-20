@@ -7,7 +7,6 @@ export default [
     icon: { icon: 'tabler-shopping-bag' },
     children: [
       { title: 'List', to: 'apps-ecommerce-product-list', icon: { icon: 'tabler-list' } },
-      { title: 'Add', to: 'apps-ecommerce-product-add', icon: { icon: 'tabler-plus' } },
       { title: 'Category', to: 'apps-ecommerce-product-category-list', icon: { icon: 'tabler-tag' } },
     ],
   },

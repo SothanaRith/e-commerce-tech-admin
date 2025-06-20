@@ -8,7 +8,7 @@ const elementId = computed(() => {
   const attrs = useAttrs()
   const _elementIdToken = attrs.id
   const _id = useId()
-  
+
   return _elementIdToken ? `app-select-${ _elementIdToken }` : _id
 })
 
