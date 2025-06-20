@@ -82,6 +82,15 @@ const resolveStatus = status => {
     }
 }
 
+const changeStatus = status => {
+  if (status === "pending")
+    return 'delivery'
+  if (status === "delivery")
+    return 'delivered'
+  if (status === "delivered")
+    return 'completed'
+}
+
 const paymentImage = type => {
   if (type.toUpperCase() === "aba".toUpperCase())
     return 'https://cdn6.aptoide.com/imgs/2/a/6/2a6b391e2053870eac06539bd99d51a6_icon.png'
@@ -269,7 +278,6 @@ const updateOrderStatus = async (id, orderStatus) => {
         :headers="headers"
         :items="currentOrderData"
         :items-length="totalOrders"
-        show-select
         class="text-no-wrap"
         @update:options="updateOptions"
       >
@@ -330,7 +338,6 @@ const updateOrderStatus = async (id, orderStatus) => {
                 v-if="item.paymentType"
                 :src="paymentImage(item.paymentType)"
               />
-
               <span
                 v-else
                 class="font-weight-medium"
@@ -347,7 +354,7 @@ const updateOrderStatus = async (id, orderStatus) => {
         <!-- Status -->
         <template #item.status="{ item }">
           <VChip
-            v-bind="resolveStatus(item.status)"
+            v-bind="resolveStatus(item.Transaction?.status)"
             label
             size="small"
           />
@@ -369,20 +376,29 @@ const updateOrderStatus = async (id, orderStatus) => {
             <VIcon icon="tabler-dots-vertical" />
             <VMenu activator="parent">
               <VList>
-                <VListItem
-                  value="view"
-                  :disabled="item.status.toUpperCase() !== 'pending'.toUpperCase()"
-                  @click="updateOrderStatus(item.id, 'delivery')"
-                >
-                  Approve
-                </VListItem>
-                <VListItem
-                  value="delete"
-                  :disabled="item.status.toUpperCase() !== 'pending'.toUpperCase()"
-                  @click="updateOrderStatus(item.id, 'cancelled')"
-                >
-                  Reject
-                </VListItem>
+                <div v-if="item.status.toUpperCase() !== 'cancelled'.toUpperCase() && item.status.toUpperCase() !== 'completed'.toUpperCase()">
+                  <VListItem
+                    value="view"
+                    :disabled="item.status.toUpperCase() === 'cancelled'.toUpperCase()"
+                    @click="updateOrderStatus(item.id, changeStatus(item.status))"
+                  >
+                    Approve
+                  </VListItem>
+                </div>
+                <div v-if="item.status.toUpperCase() !== 'cancelled'.toUpperCase() && item.status.toUpperCase() !== 'completed'.toUpperCase()">
+                  <VListItem
+                    value="delete"
+                    :disabled="item.status.toUpperCase() === 'cancelled'.toUpperCase()"
+                    @click="updateOrderStatus(item.id, 'cancelled')"
+                  >
+                    Reject
+                  </VListItem>
+                </div>
+                <div v-if="item.status.toUpperCase() === 'delivery'.toUpperCase()">
+                  <VListItem>
+                    Print Invoice
+                  </VListItem>
+                </div>
               </VList>
             </VMenu>
           </IconBtn>

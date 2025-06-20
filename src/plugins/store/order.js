@@ -50,7 +50,6 @@ export const useOrderStore = defineStore('userOrder', () => {
         },
       }))
 
-        console.log(data)
       // Assign the fetched data to the correct categories
       orderData.value = {
         pending: data.value.pending.orders || [],

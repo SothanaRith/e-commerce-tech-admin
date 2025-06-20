@@ -1,7 +1,4 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-import { useApi } from '@/composables/useApi'
-import { createUrl } from "@core/composable/createUrl"
 
 export const useAuthStore = defineStore('userAuth', () => {
     
@@ -230,7 +227,6 @@ export const useAuthStore = defineStore('userAuth', () => {
   }
 
   return {
-    updateOptions,
     login,
     register,
     otpVerify,

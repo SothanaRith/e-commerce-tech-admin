@@ -51,6 +51,10 @@ const resolveStatus = status => {
 }
 
 onMounted(async () => {
+  await fetchData()
+})
+
+const fetchData = async () => {
   await useOrder.fetchOrderById(route.params.id)
   orderData.value = useOrder.orderSingleData
   totalAmount.value = orderData.value?.totalAmount
@@ -65,7 +69,7 @@ onMounted(async () => {
     quantity: item.quantity,
     total: parseFloat(item.price || 0).toFixed(2),
   })) || []
-})
+}
 
 // User & billing data (update dynamically if needed)
 const userData = ref({
@@ -89,6 +93,22 @@ const currentBillingAddress = ref({
   landmark: orderData.value?.address?.fullName || '',
   contact: orderData.value?.address?.phoneNumber || '',
 })
+
+const changeStatus = status => {
+  if (status === "pending")
+    return { status: 'delivery', text: 'Approve Order' }
+  if (status === "delivery")
+    return { status: 'delivered', text: 'delivered Order' }
+  if (status === "delivered")
+    return { status: 'completed', text: 'Done Order' }
+  if (status === 'cancelled')
+    return { status: 'cancelled', text: 'Reject Order' }
+}
+
+const updateOrderStatus = async (id, orderStatus) => {
+  await useOrder.editOrder(id, orderStatus)
+  await fetchData()
+}
 </script>
 
 <template>
@@ -115,15 +135,26 @@ const currentBillingAddress = ref({
         </div>
       </div>
 
-
-      <VBtn
-        variant="tonal"
-        color="success"
-        v-if="orderData?.status !== 'cancelled'"
-        @click="isConfirmDialogVisible = true"
-      >
-        Approved Order
-      </VBtn>
+      <div class="d-flex ga-2">
+        <div v-if="orderData?.status !== 'cancelled' && orderData?.status !== 'completed'">
+          <VChip
+            v-bind="changeStatus(orderData?.status)"
+            color="success"
+            label
+            size="large"
+            @click="updateOrderStatus(orderData?.id, changeStatus(orderData?.status).status)"
+          />
+        </div>
+        <div v-if="orderData?.status !== 'cancelled' && orderData?.status !== 'completed'">
+          <VChip
+            v-bind="changeStatus('cancelled')"
+            color="warning"
+            label
+            size="large"
+            @click="updateOrderStatus(orderData?.id, 'cancelled')"
+          />
+        </div>
+      </div>
     </div>
 
     <VRow>

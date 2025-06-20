@@ -13,7 +13,7 @@ export const useProductStore = defineStore('userProduct', () => {
   const productData = ref(null)
 
   const fetchProduct = async () => {
-    const { data } = await useApi(createUrl('/product/get-all-categories', {
+    const { data } = await useApi(createUrl('/product/get-all', {
       query: {
         q: searchQuery,
         sortBy,
@@ -39,7 +39,6 @@ export const useProductStore = defineStore('userProduct', () => {
   // Add new product
   const addProduct = async productData => {
 
-
     await $api('/product/create-product', {
       method: 'POST',
       body: JSON.stringify(productData),
@@ -61,6 +60,16 @@ export const useProductStore = defineStore('userProduct', () => {
     await fetchProduct()
   }
 
+  const deleteProduct = async id => {
+
+    await $api(`/product/delete/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    await fetchProduct()
+  }
+
   return {
     searchQuery,
     itemsPerPage,
@@ -74,5 +83,6 @@ export const useProductStore = defineStore('userProduct', () => {
     fetchProduct,
     addProduct,
     editProduct,
+    deleteProduct,
   }
 })
