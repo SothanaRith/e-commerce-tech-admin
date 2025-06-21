@@ -1,39 +1,52 @@
 <script setup>
-import {
-  useDropZone,
-  useFileDialog,
-  useObjectUrl,
-} from '@vueuse/core'
+import { ref } from 'vue'
+import { useDropZone, useFileDialog, useObjectUrl } from '@vueuse/core'
 
 const dropZoneRef = ref()
 const fileData = ref([])
-const { open, onChange } = useFileDialog({ accept: 'image/*' })
-function onDrop(DroppedFiles) {
-  DroppedFiles?.forEach(file => {
-    if (file.type.slice(0, 6) !== 'image/') {
 
-      // eslint-disable-next-line no-alert
-      alert('Only image files are allowed')
-      
-      return
-    }
-    fileData.value.push({
-      file,
-      url: useObjectUrl(file).value ?? '',
-    })
-  })
+const emit = defineEmits(['update:files'])
+const { open, onChange } = useFileDialog({ accept: 'image/*' })
+
+function emitFiles() {
+  emit(
+    'update:files',
+    fileData.value.map(item => ({
+      file: item.file,
+      url: item.url,
+    }))
+  )
 }
-onChange(selectedFiles => {
-  if (!selectedFiles)
-    return
-  for (const file of selectedFiles) {
-    fileData.value.push({
+
+function addFiles(files) {
+  const newItems = []
+
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) {
+      alert('Only image files are allowed')
+      continue
+    }
+
+    newItems.push({
       file,
-      url: useObjectUrl(file).value ?? '',
+      url: useObjectUrl(file).value,
     })
   }
+
+  fileData.value.push(...newItems)
+  emitFiles()
+}
+
+onChange(files => {
+  if (files) addFiles(files)
 })
-useDropZone(dropZoneRef, onDrop)
+
+useDropZone(dropZoneRef, addFiles)
+
+function removeFile(index) {
+  fileData.value.splice(index, 1)
+  emitFiles()
+}
 </script>
 
 <template>
@@ -44,6 +57,7 @@ useDropZone(dropZoneRef, onDrop)
         class="cursor-pointer"
         @click="() => open()"
       >
+        <!-- Empty DropZone -->
         <div
           v-if="fileData.length === 0"
           class="d-flex flex-column justify-center align-center gap-y-2 pa-12 drop-zone rounded"
@@ -67,6 +81,7 @@ useDropZone(dropZoneRef, onDrop)
           </VBtn>
         </div>
 
+        <!-- File Previews -->
         <div
           v-else
           class="d-flex justify-center align-center gap-3 pa-8 drop-zone flex-wrap"
@@ -96,7 +111,7 @@ useDropZone(dropZoneRef, onDrop)
                         {{ item.file.name }}
                       </span>
                       <span>
-                        {{ item.file.size / 1000 }} KB
+                        {{ (item.file.size / 1000).toFixed(2) }} KB
                       </span>
                     </div>
                   </VCardText>
@@ -104,7 +119,7 @@ useDropZone(dropZoneRef, onDrop)
                     <VBtn
                       variant="text"
                       block
-                      @click.stop="fileData.splice(index, 1)"
+                      @click.stop="removeFile(index)"
                     >
                       Remove File
                     </VBtn>

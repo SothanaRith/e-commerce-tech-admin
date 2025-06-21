@@ -60,6 +60,15 @@ export const useProductStore = defineStore('userProduct', () => {
     category.value = data.value?.categories || []
   }
 
+  const addCategory = async formData => {
+    await $api('/category/create-category', {
+      method: 'POST',
+      body: formData,
+    })
+
+    await fetchCategory()
+  }
+
   const updateOptions = options => {
     sortBy.value = options.sortBy[0]?.key
     orderBy.value = options.sortBy[0]?.order
@@ -72,11 +81,10 @@ export const useProductStore = defineStore('userProduct', () => {
   )
 
   const addProduct = async formData => {
+    console.log(formData)
     await $api('/product/create-product', {
       method: 'POST',
       body: formData,
-
-      // ✅ Let the browser set the correct multipart/form-data headers
     })
 
     await fetchProduct()
@@ -93,7 +101,7 @@ export const useProductStore = defineStore('userProduct', () => {
 
   const deleteProduct = async id => {
     await $api(`/product/delete/${id}`, {
-      method: 'POST',
+      method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
     })
     await fetchProduct()
@@ -118,5 +126,6 @@ export const useProductStore = defineStore('userProduct', () => {
     editProduct,
     deleteProduct,
     fetchCategory,
+    addCategory,
   }
 })

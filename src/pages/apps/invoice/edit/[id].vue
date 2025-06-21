@@ -67,16 +67,6 @@ const paymentMethods = [
     >
       <VCard class="mb-8">
         <VCardText>
-          <!-- 👉 Send Invoice Trigger button -->
-          <VBtn
-            block
-            prepend-icon="tabler-send"
-            class="mb-4"
-            @click="isSendSidebarActive = true"
-          >
-            Send Invoice
-          </VBtn>
-
           <div class="d-flex flex-wrap gap-4">
             <!-- 👉  Preview button -->
             <VBtn
@@ -94,69 +84,12 @@ const paymentMethods = [
               variant="tonal"
               class="mb-4 flex-grow-1"
             >
-              Save
+              print
             </VBtn>
           </div>
 
-          <!-- 👉 Add Payment trigger button -->
-          <VBtn
-            block
-            color="success"
-            prepend-icon="tabler-currency-dollar"
-            @click="isAddPaymentSidebarActive = true"
-          >
-            Add Payment
-          </VBtn>
         </VCardText>
       </VCard>
-
-      <!-- 👉 Accept payment via  -->
-      <AppSelect
-        id="payment-method"
-        v-model="selectedPaymentMethod"
-        :items="paymentMethods"
-        label="Accept Payment Via"
-        class="mb-4"
-      />
-
-      <!-- 👉 Payment Terms -->
-      <div class="d-flex align-center justify-space-between">
-        <VLabel for="payment-terms">
-          Payment Terms
-        </VLabel>
-        <div>
-          <VSwitch
-            id="payment-terms"
-            v-model="paymentTerms"
-          />
-        </div>
-      </div>
-
-      <!-- 👉 Client Notes -->
-      <div class="d-flex align-center justify-space-between">
-        <VLabel for="client-notes">
-          Client Notes
-        </VLabel>
-        <div>
-          <VSwitch
-            id="client-notes"
-            v-model="clientNotes"
-          />
-        </div>
-      </div>
-
-      <!-- 👉 Payment Stub -->
-      <div class="d-flex align-center justify-space-between">
-        <VLabel for="payment-stub">
-          Payment Stub
-        </VLabel>
-        <div>
-          <VSwitch
-            id="payment-stub"
-            v-model="paymentStub"
-          />
-        </div>
-      </div>
     </VCol>
 
     <!-- 👉 Invoice send drawer -->

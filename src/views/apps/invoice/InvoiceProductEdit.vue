@@ -88,14 +88,6 @@ watch(totalPrice, () => {
         md="2"
       >
         <h6 class="text-h6 ps-2">
-          Cost
-        </h6>
-      </VCol>
-      <VCol
-        cols="12"
-        md="2"
-      >
-        <h6 class="text-h6 ps-2">
           Hours
         </h6>
       </VCol>
@@ -146,34 +138,6 @@ watch(totalPrice, () => {
           sm="4"
         >
           <AppTextField
-            id="item-cost"
-            v-model="localProductData.cost"
-            type="number"
-            placeholder="Cost"
-            class="mb-6"
-          />
-
-          <div class="text-high-emphasis text-no-wrap mt-4">
-            <p class="mb-1">
-              Discount
-            </p>
-            <span>0%</span>
-            <span class="mx-2">
-              0%
-              <VTooltip activator="parent">Tax 1</VTooltip>
-            </span>
-            <span>
-              0%
-              <VTooltip activator="parent">Tax 2</VTooltip>
-            </span>
-          </div>
-        </VCol>
-        <VCol
-          cols="12"
-          md="2"
-          sm="4"
-        >
-          <AppTextField
             id="item-hours"
             v-model="localProductData.hours"
             type="number"
@@ -191,22 +155,6 @@ watch(totalPrice, () => {
           </p>
         </VCol>
       </VRow>
-    </div>
-
-    <!-- 👉 Item Actions -->
-    <div
-      class="d-flex flex-column align-end item-actions"
-      :class="$vuetify.display.smAndUp ? 'border-s' : 'border-b' "
-    >
-      <IconBtn
-        size="36"
-        @click="removeProduct"
-      >
-        <VIcon
-          :size="24"
-          icon="tabler-x"
-        />
-      </IconBtn>
     </div>
   </VCard>
 </template>

@@ -3,12 +3,6 @@ import { ref } from 'vue'
 import { useProductStore } from "@/plugins/store/product"
 import AppSelect from "@core/components/app-form-elements/AppSelect.vue";
 
-const isTaxChargeToProduct = ref(true)
-
-const content = ref(`<p>
-    Keep your account secure with authentication step.
-    </p>`)
-
 const useProduct = useProductStore()
 
 onMounted(async () => {
@@ -41,9 +35,9 @@ watch(productName, newVal => {
 const addProduct = async () => {
   const formData = new FormData()
 
-  uploadedFiles.value.forEach(file => {
-    formData.append('images', file)
-  })
+  for (const item of uploadedFiles.value.value) {
+    formData.append('images', item.file)
+  }
 
   formData.append('categoryId', productCategory.value ?? '1')
   formData.append('name', productName.value)
@@ -137,11 +131,10 @@ const addProduct = async () => {
             </template>
           </VCardItem>
           <VCardText>
-            <DropZone @update:files="files => uploadedFiles = Array.from(files)" />
+            <DropZone @update:files="val => uploadedFiles.value = val" />
           </VCardText>
         </VCard>
       </VCol>
-
       <VCol
         md="4"
         cols="12"

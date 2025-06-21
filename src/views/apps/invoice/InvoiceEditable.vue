@@ -229,14 +229,6 @@ const removeProduct = id => {
           @remove-product="removeProduct"
         />
       </div>
-
-      <VBtn
-        size="small"
-        prepend-icon="tabler-plus"
-        @click="addItem"
-      >
-        Add Item
-      </VBtn>
     </div>
 
     <VDivider class="my-6 border-dashed" />
@@ -264,43 +256,6 @@ const removeProduct = id => {
       </div>
 
       <div>
-        <table class="w-100">
-          <tbody>
-            <tr>
-              <td class="pe-16">
-                Subtotal:
-              </td>
-              <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
-                <h6 class="text-h6">
-                  $1800
-                </h6>
-              </td>
-            </tr>
-            <tr>
-              <td class="pe-16">
-                Discount:
-              </td>
-              <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
-                <h6 class="text-h6">
-                  $28
-                </h6>
-              </td>
-            </tr>
-            <tr>
-              <td class="pe-16">
-                Tax:
-              </td>
-              <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
-                <h6 class="text-h6">
-                  21%
-                </h6>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <VDivider class="mt-4 mb-3" />
-
         <table class="w-100">
           <tbody>
             <tr>

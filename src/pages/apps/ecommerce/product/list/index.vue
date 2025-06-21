@@ -225,23 +225,11 @@ const deleteProduct = async id => {
             <VMenu activator="parent">
               <VList>
                 <VListItem
-                  value="download"
-                  prepend-icon="tabler-download"
-                >
-                  Download
-                </VListItem>
-                <VListItem
                   value="delete"
                   prepend-icon="tabler-trash"
                   @click="deleteProduct(item.id)"
                 >
                   Delete
-                </VListItem>
-                <VListItem
-                  value="duplicate"
-                  prepend-icon="tabler-copy"
-                >
-                  Duplicate
                 </VListItem>
               </VList>
             </VMenu>

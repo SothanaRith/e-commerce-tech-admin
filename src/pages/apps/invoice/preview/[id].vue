@@ -250,40 +250,6 @@ const printInvoice = () => {
             </div>
 
             <div>
-              <table class="w-100">
-                <tbody>
-                  <tr>
-                    <td class="pe-16">
-                      Subtotal:
-                    </td>
-                    <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
-                      <h6 class="text-base font-weight-medium">
-                        $1800
-                      </h6>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="pe-16">
-                      Discount:
-                    </td>
-                    <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
-                      <h6 class="text-base font-weight-medium">
-                        $28
-                      </h6>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="pe-16">
-                      Tax:
-                    </td>
-                    <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
-                      <h6 class="text-base font-weight-medium">
-                        21%
-                      </h6>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
 
               <VDivider class="my-2" />
 
@@ -322,24 +288,6 @@ const printInvoice = () => {
       >
         <VCard>
           <VCardText>
-            <!-- 👉 Send Invoice Trigger button -->
-            <VBtn
-              block
-              prepend-icon="tabler-send"
-              class="mb-4"
-              @click="isSendPaymentSidebarVisible = true"
-            >
-              Send Invoice
-            </VBtn>
-
-            <VBtn
-              block
-              color="secondary"
-              variant="tonal"
-              class="mb-4"
-            >
-              Download
-            </VBtn>
 
             <div class="d-flex flex-wrap gap-4">
               <VBtn
@@ -350,26 +298,7 @@ const printInvoice = () => {
               >
                 Print
               </VBtn>
-
-              <VBtn
-                color="secondary"
-                variant="tonal"
-                class="mb-4 flex-grow-1"
-                :to="{ name: 'apps-invoice-edit-id', params: { id: route.params.id } }"
-              >
-                Edit
-              </VBtn>
             </div>
-
-            <!-- 👉  Add Payment trigger button  -->
-            <VBtn
-              block
-              prepend-icon="tabler-currency-dollar"
-              color="success"
-              @click="isAddPaymentSidebarVisible = true"
-            >
-              Add Payment
-            </VBtn>
           </VCardText>
         </VCard>
       </VCol>

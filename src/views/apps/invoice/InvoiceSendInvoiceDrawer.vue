@@ -73,9 +73,7 @@ const handleDrawerModelValueUpdate = val => {
 
               <VCol cols="12">
                 <AppTextField
-
                   id="receiver-email"
-
                   v-model="emailTo"
                   label="To"
                   placeholder="receiver@email.com"

@@ -10,6 +10,8 @@ import {
 } from '@tiptap/vue-3'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { VForm } from 'vuetify/components/VForm'
+import { ref, watch } from 'vue'
+import { useProductStore } from '@/plugins/store/product'
 
 const props = defineProps({
   isDrawerOpen: {
@@ -35,44 +37,38 @@ const editor = useEditor({
   ],
 })
 
-const setLink = () => {
-  const previousUrl = editor.value?.getAttributes('link').href
-
-  // eslint-disable-next-line no-alert
-  const url = window.prompt('URL', previousUrl)
-
-  // cancelled
-  if (url === null)
-    return
-
-  // empty
-  if (url === '') {
-    editor.value?.chain().focus().extendMarkRange('link').unsetLink().run()
-    
-    return
-  }
-
-  // update link
-  editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-}
-
 const addImage = () => {
-
-  // eslint-disable-next-line no-alert
-  const url = window.prompt('URL')
-  if (url)
-    editor.value?.chain().focus().setImage({ src: url }).run()
+  const url = prompt('Enter image URL')
+  if (url) {
+    editor?.chain().focus().setImage({ src: url }).run()
+  }
 }
 
 const refVForm = ref()
-const categoryTitle = ref()
-const categorySlug = ref()
-const categoryImg = ref()
-const parentCategory = ref()
-const parentStatus = ref()
+const categoryTitle = ref('')
+const categoryImg = ref(null)
+const useProduct = useProductStore()
+
+const addCategory = async () => {
+  const isValid = await refVForm.value?.validate()
+  if (!isValid) return
+
+  const formData = new FormData()
+
+  formData.append('name', categoryTitle.value)
+  formData.append('description', editor.value.getHTML())
+  if (categoryImg.value) formData.append('image', categoryImg.value)
+
+  await useProduct.addCategory(formData)
+
+  resetForm()
+}
 
 const resetForm = () => {
   emit('update:isDrawerOpen', false)
+  categoryTitle.value = ''
+  categoryImg.value = null
+  editor?.commands.setContent('')
   refVForm.value?.reset()
 }
 </script>
@@ -107,20 +103,9 @@ const resetForm = () => {
                 <AppTextField
                   v-model="categoryTitle"
                   label="Title"
-                  :rules="[requiredValidator]"
                   placeholder="Fashion"
                 />
               </VCol>
-
-              <VCol cols="12">
-                <AppTextField
-                  v-model="categorySlug"
-                  label="Slug"
-                  :rules="[requiredValidator]"
-                  placeholder="Trends fashion"
-                />
-              </VCol>
-
               <VCol cols="12">
                 <VLabel>
                   <span class="text-sm text-high-emphasis mb-1">Attachment</span>
@@ -128,7 +113,6 @@ const resetForm = () => {
                 <VFileInput
                   v-model="categoryImg"
                   prepend-icon=""
-                  :rules="[requiredValidator]"
                   clearable
                 >
                   <template #append>
@@ -137,16 +121,6 @@ const resetForm = () => {
                     </VBtn>
                   </template>
                 </VFileInput>
-              </VCol>
-
-              <VCol cols="12">
-                <AppSelect
-                  v-model="parentCategory"
-                  :rules="[requiredValidator]"
-                  label="Parent Category"
-                  placeholder="Select Parent Category"
-                  :items="['HouseHold', 'Management', 'Electronics', 'Office', 'Accessories']"
-                />
               </VCol>
 
               <VCol cols="12">
@@ -195,12 +169,6 @@ const resetForm = () => {
                     />
 
                     <VIcon
-                      icon="tabler-link"
-                      size="20"
-                      @click="setLink"
-                    />
-
-                    <VIcon
                       icon="tabler-photo"
                       size="20"
                       @click="addImage"
@@ -210,21 +178,12 @@ const resetForm = () => {
               </VCol>
 
               <VCol cols="12">
-                <AppSelect
-                  v-model="parentStatus"
-                  :rules="[requiredValidator]"
-                  placeholder="Select Category Status"
-                  label="Select Category Status"
-                  :items="['Published', 'Inactive', 'Scheduled']"
-                />
-              </VCol>
-
-              <VCol cols="12">
                 <div class="d-flex justify-start">
                   <VBtn
                     type="submit"
                     color="primary"
                     class="me-4"
+                    @click="addCategory"
                   >
                     Add
                   </VBtn>
