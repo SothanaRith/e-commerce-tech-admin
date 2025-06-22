@@ -12,12 +12,13 @@ export const useProductStore = defineStore('userProduct', () => {
   const page = ref(1)
   const sortBy = ref()
   const orderBy = ref()
+  const isLoading = ref()
   const selectedRows = ref([])
 
   const product = ref([])
   const category = ref([])
   const totalProduct = ref(0)
-
+  const router = useRouter()
   const productName = ref('')
   const productSKU = ref('')
   const productPrice = ref(499)
@@ -61,6 +62,7 @@ export const useProductStore = defineStore('userProduct', () => {
   }
 
   const addCategory = async formData => {
+
     await $api('/category/create-category', {
       method: 'POST',
       body: formData,
@@ -81,13 +83,22 @@ export const useProductStore = defineStore('userProduct', () => {
   )
 
   const addProduct = async formData => {
-    console.log(formData)
-    await $api('/product/create-product', {
-      method: 'POST',
-      body: formData,
-    })
+    if (isLoading.value) {
+      return
+    }
 
-    await fetchProduct()
+    isLoading.value = true
+
+    try {
+      await $api('/product/create-product', {
+        method: 'POST',
+        body: formData,
+      })
+      await fetchProduct()
+      router.push({ name: 'apps-ecommerce-product-list' })
+    } catch (e) {
+      isLoading.value = false
+    }
   }
 
   const editProduct = async (id, productDataInput) => {

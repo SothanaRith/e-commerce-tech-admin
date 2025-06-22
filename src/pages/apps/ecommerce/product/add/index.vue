@@ -18,6 +18,7 @@ const productSKU = ref()
 const productStock = ref()
 const productDescription = ref()
 const productName = ref()
+const isLoading = ref()
 
 const generateSKU = (prefix = 'SKU') => {
   const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase()
@@ -33,10 +34,14 @@ watch(productName, newVal => {
 })
 
 const addProduct = async () => {
+  isLoading.value = true
+
   const formData = new FormData()
 
-  for (const item of uploadedFiles.value.value) {
-    formData.append('images', item.file)
+  if (uploadedFiles.value.value) {
+    for (const item of uploadedFiles.value.value) {
+      formData.append('images', item.file)
+    }
   }
 
   formData.append('categoryId', productCategory.value ?? '1')
@@ -56,6 +61,7 @@ const addProduct = async () => {
   formData.append('relatedProductIds', JSON.stringify(relatedProducts.value))
 
   await useProduct.addProduct(formData)
+  isLoading.value = false
 }
 </script>
 
