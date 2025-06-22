@@ -1,199 +1,99 @@
 import { defineStore } from 'pinia'
+import { useApi } from "@/composables/useApi.js"
+import { createUrl } from "@core/composable/createUrl.js"
 
 export const useAuthStore = defineStore('userAuth', () => {
-    
+
+  const route = useRoute()
+  const router = useRouter()
+  const ability = useAbility()
+
   const login = async data => {
+
     try {
       const res = await $api('/auth/login', {
         method: 'POST',
         body: {
-          email: data.value.email,
-          password: data.value.password,
+          email: data.email,
+          password: data.password,
         },
       })
 
-      const { accessToken, userData, userAbilityRules } = res
-
-      useCookie('userAbilityRules').value = userAbilityRules
-      ability.update(userAbilityRules)
-
-      const { avatar, ...safeUserData } = userData
-
-      useCookie('userData').value = safeUserData
-
-      if (avatar && avatar.startsWith('data:image')) {
-        localStorage.setItem('userAvatar', avatar)
-      }
+      const { accessToken } = res
 
       useCookie('accessToken').value = accessToken
-      await nextTick(() => {
-        router.replace(route.query.to ? String(route.query.to) : '/')
-      })
+
+      router.push({ name: 'pages-authentication-two-steps-v2' })
     } catch (err) {
       console.error(err)
     }
   }
 
-  const sendOtp = async data => {
+  const sendOtp = async () => {
     try {
+      const token = useCookie('accessToken').value
+
+      if (!token) {
+        throw new Error('Access token is missing or expired')
+      }
+
       const res = await $api('/auth/send-otp', {
         method: 'POST',
-        body: {
-          email: data.value.email,
-          password: data.value.password,
-        },
       })
 
-      const { accessToken, userData, userAbilityRules } = res
-
-      useCookie('userAbilityRules').value = userAbilityRules
-      ability.update(userAbilityRules)
-
-      const { avatar, ...safeUserData } = userData
-
-      useCookie('userData').value = safeUserData
-
-      if (avatar && avatar.startsWith('data:image')) {
-        localStorage.setItem('userAvatar', avatar)
-      }
+      const { accessToken } = res
 
       useCookie('accessToken').value = accessToken
-      await nextTick(() => {
-        router.replace(route.query.to ? String(route.query.to) : '/')
-      })
+
     } catch (err) {
-      console.error(err)
+      console.error('Send OTP failed:', err)
     }
   }
 
-  const register = async data => {
-    try {
-      const res = await $api('/auth/register', {
-        method: 'POST',
-        body: {
-          email: data.value.email,
-          password: data.value.password,
-        },
-      })
-
-      const { accessToken, userData, userAbilityRules } = res
-
-      useCookie('userAbilityRules').value = userAbilityRules
-      ability.update(userAbilityRules)
-
-      const { avatar, ...safeUserData } = userData
-
-      useCookie('userData').value = safeUserData
-
-      if (avatar && avatar.startsWith('data:image')) {
-        localStorage.setItem('userAvatar', avatar)
-      }
-
-      useCookie('accessToken').value = accessToken
-      await nextTick(() => {
-        router.replace(route.query.to ? String(route.query.to) : '/')
-      })
-    } catch (err) {
-      console.error(err)
-    }
-  }
 
   const otpVerify = async data => {
     try {
       const res = await $api('/auth/verify-otp', {
         method: 'POST',
         body: {
-          email: data.value.email,
-          password: data.value.password,
+          otp: data.otp, // ✅ Make sure this is defined
         },
       })
 
-      const { accessToken, userData, userAbilityRules } = res
-
-      useCookie('userAbilityRules').value = userAbilityRules
-      ability.update(userAbilityRules)
-
-      const { avatar, ...safeUserData } = userData
-
-      useCookie('userData').value = safeUserData
-
-      if (avatar && avatar.startsWith('data:image')) {
-        localStorage.setItem('userAvatar', avatar)
-      }
+      const { accessToken } = res
 
       useCookie('accessToken').value = accessToken
-      await nextTick(() => {
-        router.replace(route.query.to ? String(route.query.to) : '/')
-      })
+        
+      await fetchUserById()
+
+      // await nextTick(() => {
+      //   router.replace(route.query.to ? String(route.query.to) : '/dashboards/ecommerce')
+      // })
+        
     } catch (err) {
       console.error(err)
     }
   }
 
-  const logout = async data => {
+  const fetchUserById = async () => {
     try {
-      const res = await $api('/auth/logout', {
-        method: 'POST',
-        body: {
-          email: data.value.email,
-          password: data.value.password,
-        },
-      })
+      const { data } = await useApi(createUrl(`/users/getProfile` ))
 
-      const { accessToken, userData, userAbilityRules } = res
+      useCookie('userData').value = data.value.filteredUser
 
-      useCookie('userAbilityRules').value = userAbilityRules
-      ability.update(userAbilityRules)
-
-      const { avatar, ...safeUserData } = userData
-
-      useCookie('userData').value = safeUserData
-
-      if (avatar && avatar.startsWith('data:image')) {
-        localStorage.setItem('userAvatar', avatar)
-      }
-
-      useCookie('accessToken').value = accessToken
-      await nextTick(() => {
-        router.replace(route.query.to ? String(route.query.to) : '/')
-      })
-    } catch (err) {
-      console.error(err)
-    }
-  }
-  
-  const resetPassword = async data => {
-    try {
-      const res = await $api('/auth/reset-password', {
-        method: 'POST',
-        body: {
-          email: data.value.email,
-          password: data.value.password,
-        },
-      })
-
-      const { accessToken, userData, userAbilityRules } = res
+      const userAbilityRules = [{
+        'action': "manage",
+        'subject': "all",
+      }]
 
       useCookie('userAbilityRules').value = userAbilityRules
       ability.update(userAbilityRules)
 
-      const { avatar, ...safeUserData } = userData
-
-      useCookie('userData').value = safeUserData
-
-      if (avatar && avatar.startsWith('data:image')) {
-        localStorage.setItem('userAvatar', avatar)
-      }
-
-      useCookie('accessToken').value = accessToken
-      await nextTick(() => {
-        router.replace(route.query.to ? String(route.query.to) : '/')
-      })
-    } catch (err) {
-      console.error(err)
+    } catch (error) {
+      console.error('Error fetching orders:', error)
     }
   }
-  
+    
   const refreshToken = async data => {
     try {
       const res = await $api('/auth/refresh-token', {
@@ -228,11 +128,8 @@ export const useAuthStore = defineStore('userAuth', () => {
 
   return {
     login,
-    register,
     otpVerify,
     sendOtp,
-    logout,
-    resetPassword,
     refreshToken,
   }
 })

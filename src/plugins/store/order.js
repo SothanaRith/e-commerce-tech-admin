@@ -166,7 +166,6 @@ export const useOrderStore = defineStore('userOrder', () => {
       console.error('Error fetching orders:', error)
     }
   }
-
   
   return {
     searchQuery,

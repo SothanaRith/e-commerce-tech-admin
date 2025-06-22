@@ -10,7 +10,7 @@ export const redirects = [
     redirect: to => {
       // TODO: Get type from backend
       const userData = useCookie('userData')
-      const userRole = userData.value?.role
+      const userRole = 'admin'
       if (userRole === 'admin')
         return { name: 'dashboards-ecommerce' }
       if (userRole === 'client')

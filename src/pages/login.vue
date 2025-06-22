@@ -11,6 +11,7 @@ import authV2MaskDark from '@images/pages/misc-mask-dark.png'
 import authV2MaskLight from '@images/pages/misc-mask-light.png'
 import { VNodeRenderer } from '@layouts/components/VNodeRenderer'
 import { themeConfig } from '@themeConfig'
+import {useAuthStore} from "@/plugins/store/auth.js";
 
 const authThemeImg = useGenerateImageVariant(authV2LoginIllustrationLight, authV2LoginIllustrationDark, authV2LoginIllustrationBorderedLight, authV2LoginIllustrationBorderedDark, true)
 const authThemeMask = useGenerateImageVariant(authV2MaskLight, authV2MaskDark)
@@ -23,9 +24,6 @@ definePage({
 })
 
 const isPasswordVisible = ref(false)
-const route = useRoute()
-const router = useRouter()
-const ability = useAbility()
 
 const errors = ref({
   email: undefined,
@@ -35,43 +33,21 @@ const errors = ref({
 const refVForm = ref()
 
 const credentials = ref({
-  email: 'admin@demo.com',
-  password: 'admin',
+  email: 'sothanarithheang@gmail.com',
+  password: '123',
 })
 
 const rememberMe = ref(false)
 
-const login = async () => {
-  try {
-    const res = await $api('/auth/login', {
-      method: 'POST',
-      body: {
-        email: credentials.value.email,
-        password: credentials.value.password,
-      },
-      onResponseError({ response }) {
-        errors.value = response._data.errors
-      },
-    })
-
-    const { accessToken, userData, userAbilityRules } = res
-
-    useCookie('userAbilityRules').value = userAbilityRules
-    ability.update(userAbilityRules)
-    useCookie('userData').value = userData
-    useCookie('accessToken').value = accessToken
-    await nextTick(() => {
-      router.replace(route.query.to ? String(route.query.to) : '/')
-    })
-  } catch (err) {
-    console.error(err)
-  }
-}
+const useAuth = useAuthStore()
 
 const onSubmit = () => {
-  refVForm.value?.validate().then(({ valid: isValid }) => {
+  refVForm.value?.validate().then(async ( { valid: isValid } ) => {
     if (isValid)
-      login()
+      await useAuth.login({
+        email: credentials.value.email,
+        password: credentials.value.password,
+      })
   })
 }
 </script>

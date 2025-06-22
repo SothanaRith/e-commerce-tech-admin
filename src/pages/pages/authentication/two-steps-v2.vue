@@ -1,4 +1,7 @@
 <script setup>
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/plugins/store/auth' // Adjust path if needed
 import { useGenerateImageVariant } from '@core/composable/useGenerateImageVariant'
 import authV2TwoStepIllustrationDark from '@images/pages/auth-v2-two-step-illustration-dark.png'
 import authV2TwoStepIllustrationLight from '@images/pages/auth-v2-two-step-illustration-light.png'
@@ -17,8 +20,13 @@ definePage({
 const authThemeImg = useGenerateImageVariant(authV2TwoStepIllustrationLight, authV2TwoStepIllustrationDark)
 const authThemeMask = useGenerateImageVariant(authV2MaskLight, authV2MaskDark)
 const router = useRouter()
+
 const otp = ref('')
 const isOtpInserted = ref(false)
+const cooldown = ref(0)
+let timer = null
+
+const useAuth = useAuthStore()
 
 const onFinish = () => {
   isOtpInserted.value = true
@@ -27,7 +35,46 @@ const onFinish = () => {
     router.push('/')
   }, 2000)
 }
+
+const startCooldown = () => {
+  cooldown.value = 180
+  timer = setInterval(() => {
+    cooldown.value--
+    if (cooldown.value <= 0) {
+      clearInterval(timer)
+    }
+  }, 1000)
+}
+
+const handleResend = async () => {
+  if (cooldown.value > 0) return
+  await useAuth.sendOtp()
+  startCooldown()
+}
+
+// 👇 Auto-send OTP and start cooldown on first mount
+onMounted(async () => {
+  // await useAuth.sendOtp()
+  // startCooldown()
+})
+
+const formSubmitting = ref(false)
+
+const verifyOtp = async () => {
+  if (!otp.value || otp.value.length !== 6) return
+
+  formSubmitting.value = true
+
+  try {
+    await useAuth.otpVerify({ otp: otp.value })
+  } catch (err) {
+    console.error('OTP verification failed:', err)
+  } finally {
+    formSubmitting.value = false
+  }
+}
 </script>
+
 
 <template>
   <RouterLink to="/">
@@ -92,7 +139,7 @@ const onFinish = () => {
         </VCardText>
 
         <VCardText>
-          <VForm @submit.prevent="() => {}">
+          <VForm @submit.prevent="verifyOtp">
             <VRow>
               <!-- email -->
               <VCol cols="12">
@@ -112,8 +159,8 @@ const onFinish = () => {
               <VCol cols="12">
                 <VBtn
                   block
-                  :loading="isOtpInserted"
-                  :disabled="isOtpInserted"
+                  :loading="formSubmitting"
+                  :disabled="formSubmitting || otp.length !== 6"
                   type="submit"
                 >
                   Verify my account
@@ -124,7 +171,19 @@ const onFinish = () => {
               <VCol cols="12">
                 <div class="d-flex justify-center align-center flex-wrap">
                   <span class="me-1">Didn't get the code?</span>
-                  <a href="#">Resend</a>
+                  <VBtn
+                    variant="text"
+                    density="comfortable"
+                    :disabled="cooldown > 0"
+                    @click="handleResend"
+                  >
+                    <template v-if="cooldown > 0">
+                      Resend in {{ Math.floor(cooldown / 60) }}m {{ cooldown % 60 }}s
+                    </template>
+                    <template v-else>
+                      Resend
+                    </template>
+                  </VBtn>
                 </div>
               </VCol>
             </VRow>
