@@ -107,14 +107,6 @@ const isAddCustomerDrawerOpen = ref(false)
         </VWindow>
       </VCol>
     </VRow>
-    <div v-else>
-      <VAlert
-        type="error"
-        variant="tonal"
-      >
-        Invoice with ID  {{ route.params.id }} not found!
-      </VAlert>
-    </div>
     <ECommerceAddCustomerDrawer v-model:is-drawer-open="isAddCustomerDrawerOpen" />
   </div>
 </template>

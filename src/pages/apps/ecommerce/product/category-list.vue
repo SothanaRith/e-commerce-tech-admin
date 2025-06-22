@@ -95,12 +95,6 @@ categoryData.value = useProduct.category
         <template #item.actions>
           <IconBtn>
             <VIcon
-              icon="tabler-edit"
-              size="22"
-            />
-          </IconBtn>
-          <IconBtn>
-            <VIcon
               icon="tabler-dots-vertical"
               size="22"
             />
@@ -110,8 +104,8 @@ categoryData.value = useProduct.category
         <template #bottom>
           <TablePagination
             v-model:page="page"
-            :items-per-page="itemsPerPage"
-            :total-items="categoryData.length"
+            :items-per-page="0"
+            :total-items="0"
           />
         </template>
       </VDataTableServer>

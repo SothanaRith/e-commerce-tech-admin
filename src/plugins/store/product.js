@@ -107,6 +107,22 @@ export const useProductStore = defineStore('userProduct', () => {
     await fetchProduct()
   }
 
+  const updateTotalStock = async productId => {
+    try {
+      const { data } = await useApi(`/product/${productId}/update-stock`, {
+        method: 'PATCH',
+      })
+
+      // Optional: refetch product list to reflect the updated stock
+      await fetchProduct()
+
+      return data.value
+    } catch (error) {
+      console.error('Failed to update total stock:', error)
+      throw error
+    }
+  }
+
   return {
     searchQuery,
     selectedCategory,
@@ -127,5 +143,6 @@ export const useProductStore = defineStore('userProduct', () => {
     deleteProduct,
     fetchCategory,
     addCategory,
+    updateTotalStock,
   }
 })

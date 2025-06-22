@@ -15,23 +15,9 @@ import EcommerceTransactions from '@/views/dashboards/ecommerce/EcommerceTransac
 <template>
   <VRow class="match-height">
     
-    <VCol
-      cols="12"
-    
-    >
+    <VCol cols="12">
       <EcommerceStatistics class="h-100" />
     </VCol>
-
-
-    <VCol
-      cols="12"
-      
-    >
-      <EcommercePopularProducts />
-    </VCol>
-
-  
-    
   </VRow>
 </template>
 

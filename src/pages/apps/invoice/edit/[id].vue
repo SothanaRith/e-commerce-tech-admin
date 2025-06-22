@@ -1,59 +1,86 @@
 <script setup>
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import InvoiceAddPaymentDrawer from '@/views/apps/invoice/InvoiceAddPaymentDrawer.vue'
 import InvoiceEditable from '@/views/apps/invoice/InvoiceEditable.vue'
-import InvoiceSendInvoiceDrawer from '@/views/apps/invoice/InvoiceSendInvoiceDrawer.vue'
+import { useOrderStore } from '@/plugins/store/order.js'
 
-const invoiceData = ref()
-const route = useRoute('apps-invoice-edit-id')
-const { data: invoiceDetails } = await useApi(`/apps/invoice/${ route.params.id }`)
-if (invoiceDetails.value) {
+// Router
+const route = useRoute()
+
+// Store & refs
+const useOrder = useOrderStore()
+const orderData = ref(null)
+const orderDetail = ref([])
+const totalAmount = ref()
+const trackingSteps = ref()
+const invoiceData = ref(null)
+
+// Drawer states
+const isAddPaymentSidebarActive = ref(false)
+
+const userData = ref({})
+const currentBillingAddress = ref({})
+
+const fetchData = async () => {
+  await useOrder.fetchOrderById(route.params.id)
+  orderData.value = useOrder.orderSingleData
+
+  if (!orderData.value) return
+
+  totalAmount.value = orderData.value.totalAmount
+  trackingSteps.value = orderData.value.trackingSteps
+
+  // Product list
+  orderDetail.value = orderData.value.orderItems?.map(item => ({
+    productName: item.Product?.name || 'N/A',
+    productImage: `${item.Product?.imageUrl?.[0] || ''}`,
+    subtitle: item.Product?.description || '',
+    price: parseFloat(item.Product?.price || 0).toFixed(2),
+    quantity: item.quantity,
+    total: parseFloat(item.price || 0).toFixed(2),
+  })) || []
+
+  // User billing data
+  userData.value = {
+    id: orderData.value.User?.id || null,
+    fullName: orderData.value.User?.name || '',
+    email: orderData.value.User?.email || '',
+    contact: orderData.value.User?.phone || '',
+    avatar: orderData.value.User?.coverImage ? `${orderData.value.User?.coverImage}` : '',
+    status: 'Active',
+    taxId: 'Tax-8894',
+    language: 'English',
+    currentPlan: '',
+  }
+
+  currentBillingAddress.value = {
+    fullName: orderData.value.address?.fullName || '',
+    firstName: orderData.value.address?.fullName?.split(' ')[0] || '',
+    lastName: orderData.value.address?.fullName?.split(' ')[1] || '',
+    selectedCountry: 'Cambodia',
+    addressLine1: orderData.value.address?.street || '',
+    landmark: orderData.value.address?.fullName || '',
+    contact: orderData.value.address?.phoneNumber || '',
+  }
+
+  // Optional: Prepare full invoiceData to pass to InvoiceEditable
   invoiceData.value = {
-    invoice: invoiceDetails.value.invoice,
-    paymentDetails: invoiceDetails.value.paymentDetails,
-    purchasedProducts: [{
-      title: 'App Design',
-      cost: 24,
-      hours: 2,
-      description: 'Designed UI kit & app pages.',
-    }],
-    note: 'It was a pleasure working with you and your team. We hope you will keep us in mind for future freelance projects. Thank You!',
-    paymentMethod: 'Bank Account',
-    salesperson: 'Tom Cook',
-    thanksNote: 'Thanks for your business',
+    invoice: orderData.value,
+    orderDetail: orderDetail.value,
+    userData: userData.value,
+    currentBillingAddress: currentBillingAddress.value,
   }
 }
 
-const addProduct = value => {
-  invoiceData.value?.purchasedProducts.push(value)
-}
-
-const removeProduct = id => {
-  invoiceData.value?.purchasedProducts.splice(id, 1)
-}
-
-const isSendSidebarActive = ref(false)
-const isAddPaymentSidebarActive = ref(false)
-const paymentTerms = ref(true)
-const clientNotes = ref(false)
-const paymentStub = ref(false)
-const selectedPaymentMethod = ref('Bank Account')
-
-const paymentMethods = [
-  'Bank Account',
-  'PayPal',
-  'UPI Transfer',
-]
+onMounted(fetchData)
 </script>
 
 <template>
-  <VRow v-if="invoiceData && invoiceData?.invoice">
+  <VRow v-if="invoiceData && invoiceData.invoice">
     <!-- 👉 InvoiceEditable -->
-    <VCol
-      cols="12"
-      md="9"
-    >
+    <VCol cols="12" md="9">
       <InvoiceEditable
-        v-if="invoiceData?.invoice"
         :data="invoiceData"
         @push="addProduct"
         @remove="removeProduct"
@@ -61,14 +88,11 @@ const paymentMethods = [
     </VCol>
 
     <!-- 👉 Right Column: Invoice Action -->
-    <VCol
-      cols="12"
-      md="3"
-    >
+    <VCol cols="12" md="3">
       <VCard class="mb-8">
         <VCardText>
           <div class="d-flex flex-wrap gap-4">
-            <!-- 👉  Preview button -->
+            <!-- 👉 Preview button -->
             <VBtn
               color="secondary"
               variant="tonal"
@@ -77,34 +101,12 @@ const paymentMethods = [
             >
               Preview
             </VBtn>
-
-            <!-- 👉 Save button -->
-            <VBtn
-              color="secondary"
-              variant="tonal"
-              class="mb-4 flex-grow-1"
-            >
-              print
-            </VBtn>
           </div>
-
         </VCardText>
       </VCard>
     </VCol>
 
-    <!-- 👉 Invoice send drawer -->
-    <InvoiceSendInvoiceDrawer v-model:is-drawer-open="isSendSidebarActive" />
-
-    <!-- 👉 Invoice add payment drawer -->
+    <!-- 👉 Drawers -->
     <InvoiceAddPaymentDrawer v-model:is-drawer-open="isAddPaymentSidebarActive" />
   </VRow>
-
-  <section v-else>
-    <VAlert
-      type="error"
-      variant="tonal"
-    >
-      Invoice with ID  {{ route.params.id }} not found!
-    </VAlert>
-  </section>
 </template>

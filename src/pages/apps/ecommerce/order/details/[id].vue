@@ -10,7 +10,6 @@ const orderData = ref(null)
 const orderDetail = ref([])
 const totalAmount = ref()
 const trackingSteps = ref()
-const baseUrl = import.meta.env.VITE_BASE_URL
 
 const isConfirmDialogVisible = ref(false)
 const isUserInfoEditDialogVisible = ref(false)
@@ -63,7 +62,7 @@ const fetchData = async () => {
   // Process product list
   orderDetail.value = orderData.value?.orderItems?.map(item => ({
     productName: item.Product?.name || 'N/A',
-    productImage: `${baseUrl}${item.Product?.imageUrl?.[0] || ''}`,
+    productImage: `${item.Product?.imageUrl?.[0] || ''}`,
     subtitle: item.Product?.description || '',
     price: parseFloat(item.Product?.price || 0).toFixed(2),
     quantity: item.quantity,
@@ -103,6 +102,16 @@ const changeStatus = status => {
     return { status: 'completed', text: 'Done Order' }
   if (status === 'cancelled')
     return { status: 'cancelled', text: 'Reject Order' }
+}
+
+const changeCancelStatus = status => {
+  if (status === "pending")
+    return { status: 'cancelled', text: 'Reject Order' }
+  if (status === "delivery")
+    return { status: 'pending', text: 'Reject delivery' }
+  if (status === "delivered")
+    return { status: 'delivery', text: 'Reject delivery' }
+
 }
 
 const updateOrderStatus = async (id, orderStatus) => {
@@ -147,11 +156,11 @@ const updateOrderStatus = async (id, orderStatus) => {
         </div>
         <div v-if="orderData?.status !== 'cancelled' && orderData?.status !== 'completed'">
           <VChip
-            v-bind="changeStatus('cancelled')"
+            v-bind="changeCancelStatus(orderData?.status)"
             color="warning"
             label
             size="large"
-            @click="updateOrderStatus(orderData?.id, 'cancelled')"
+            @click="updateOrderStatus(orderData?.id, changeCancelStatus(orderData?.status).status)"
           />
         </div>
       </div>
@@ -179,7 +188,6 @@ const updateOrderStatus = async (id, orderStatus) => {
             :headers="headers"
             :items="orderDetail"
             item-value="productName"
-            show-select
             class="text-no-wrap"
           >
             <template #item.productName="{ item }">
@@ -225,12 +233,6 @@ const updateOrderStatus = async (id, orderStatus) => {
                   </tr>
                   <tr>
                     <td>Shipping Total:</td>
-                    <td class="font-weight-medium">
-                      $0
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Tax:</td>
                     <td class="font-weight-medium">
                       $0
                     </td>

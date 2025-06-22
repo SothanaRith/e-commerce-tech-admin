@@ -1,8 +1,7 @@
 <script setup>
 import { useOrderStore } from "@/plugins/store/order"
 import { computed, watch } from "vue"
-
-const baseUrl = import.meta.env.VITE_BASE_URL
+import { useProductStore } from "@/plugins/store/product.js"
 
 // Data table Headers
 const headers = [
@@ -91,6 +90,16 @@ const changeStatus = status => {
     return 'completed'
 }
 
+const changeCancelStatus = status => {
+  if (status === "pending")
+    return 'cancelled'
+  if (status === "delivery")
+    return 'pending'
+  if (status === "delivered")
+    return 'delivery'
+}
+
+
 const paymentImage = type => {
   if (type.toUpperCase() === "aba".toUpperCase())
     return 'https://cdn6.aptoide.com/imgs/2/a/6/2a6b391e2053870eac06539bd99d51a6_icon.png'
@@ -108,6 +117,8 @@ const paymentImage = type => {
 
 const widgetData = ref()
 const useOrder = useOrderStore()
+const useProduct = useProductStore()
+
 
 useOrder.fetchOrder()
 
@@ -302,7 +313,7 @@ const updateOrderStatus = async (id, orderStatus) => {
             >
               <VImg
                 v-if="item.User.coverImage"
-                :src="`${baseUrl}${item.User.coverImage}`"
+                :src="`${item.User.coverImage}`"
               />
 
               <span
@@ -385,18 +396,18 @@ const updateOrderStatus = async (id, orderStatus) => {
                     Approve
                   </VListItem>
                 </div>
-                <div v-if="item.status.toUpperCase() !== 'cancelled'.toUpperCase() && item.status.toUpperCase() !== 'completed'.toUpperCase()">
+                <div v-if="item.status.toUpperCase() !== 'cancelled'.toUpperCase()">
                   <VListItem
                     value="delete"
                     :disabled="item.status.toUpperCase() === 'cancelled'.toUpperCase()"
-                    @click="updateOrderStatus(item.id, 'cancelled')"
+                    @click="updateOrderStatus(item.id, changeCancelStatus(item.status))"
                   >
                     Reject
                   </VListItem>
                 </div>
-                <div v-if="item.status.toUpperCase() === 'delivery'.toUpperCase()">
-                  <VListItem>
-                    Print Invoice
+                <div v-if="item.status.toUpperCase() !== 'pending'.toUpperCase()">
+                  <VListItem :to="{ name: 'apps-invoice-edit-id', params: { id: item.id } }">
+                    Invoice
                   </VListItem>
                 </div>
               </VList>

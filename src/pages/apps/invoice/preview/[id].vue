@@ -1,50 +1,36 @@
+
 <script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useOrderStore } from '@/plugins/store/order.js'
 import { VNodeRenderer } from '@layouts/components/VNodeRenderer'
 import { themeConfig } from '@themeConfig'
 import InvoiceAddPaymentDrawer from '@/views/apps/invoice/InvoiceAddPaymentDrawer.vue'
-import InvoiceSendInvoiceDrawer from '@/views/apps/invoice/InvoiceSendInvoiceDrawer.vue'
 
-const route = useRoute('apps-invoice-preview-id')
+const route = useRoute()
+const useOrder = useOrderStore()
+
+const orderData = ref(null)
+const orderItems = ref([])
 const isAddPaymentSidebarVisible = ref(false)
-const isSendPaymentSidebarVisible = ref(false)
-const { data: invoiceData } = await useApi(`/apps/invoice/${ Number(route.params.id) }`)
-const invoice = ref()
-const paymentDetails = ref()
-if (invoiceData.value) {
-  invoice.value = invoiceData.value.invoice
-  paymentDetails.value = invoiceData.value.paymentDetails
+const today = new Date().toLocaleDateString('en-GB')
+
+const fetchOrder = async () => {
+  await useOrder.fetchOrderById(route.params.id)
+  orderData.value = useOrder.orderSingleData
+
+  if (!orderData.value) return
+
+  orderItems.value = orderData.value.orderItems?.map(item => ({
+    name: item.Product?.name || 'N/A',
+    description: item.Product?.description || '',
+    qty: item.quantity,
+    hours: item.hours || 1,
+    price: parseFloat(item.price || 0),
+  })) || []
 }
 
-const purchasedProducts = [
-  {
-    name: 'Premium Branding Package',
-    description: 'Branding & Promotion',
-    qty: 1,
-    hours: 15,
-    price: 32,
-  },
-  {
-    name: 'SMM',
-    description: 'Social media templates',
-    qty: 1,
-    hours: 14,
-    price: 28,
-  },
-  {
-    name: 'Web Design',
-    description: 'Web designing package',
-    qty: 1,
-    hours: 12,
-    price: 24,
-  },
-  {
-    name: 'SEO',
-    description: 'Search engine optimization',
-    qty: 1,
-    hours: 5,
-    price: 22,
-  },
-]
+onMounted(fetchOrder)
 
 const printInvoice = () => {
   window.print()
@@ -52,83 +38,56 @@ const printInvoice = () => {
 </script>
 
 <template>
-  <section v-if="invoice && paymentDetails">
+  <section v-if="orderData && orderItems.length">
     <VRow>
       <VCol
         cols="12"
         md="9"
       >
         <VCard class="invoice-preview-wrapper pa-6 pa-sm-12">
-          <!-- SECTION Header -->
           <div class="invoice-header-preview d-flex flex-wrap justify-space-between flex-column flex-sm-row print-row bg-var-theme-background gap-6 rounded pa-6 mb-6">
-            <!-- 👉 Left Content -->
             <div>
               <div class="d-flex align-center app-logo mb-6">
-                <!-- 👉 Logo -->
                 <VNodeRenderer :nodes="themeConfig.app.logo" />
-
-                <!-- 👉 Title -->
                 <h6 class="app-logo-title">
                   {{ themeConfig.app.title }}
                 </h6>
               </div>
-
-              <!-- 👉 Address -->
               <h6 class="text-h6 font-weight-regular">
-                Office 149, 450 South Brand Brooklyn
+                Office 149, 450 South Borey New World Chhouk Va II
               </h6>
               <h6 class="text-h6 font-weight-regular">
-                San Diego County, CA 91905, USA
+                Phnom Penh, Cambodia
               </h6>
               <h6 class="text-h6 font-weight-regular">
-                +1 (123) 456 7891, +44 (876) 543 2198
+                +855 123 651 87, +855 971 2929 192
               </h6>
             </div>
 
-            <!-- 👉 Right Content -->
             <div>
-              <!-- 👉 Invoice ID -->
               <h6 class="font-weight-medium text-lg mb-6">
-                Invoice #{{ invoice.id }}
+                Invoice #{{ orderData.id }}
               </h6>
-
-              <!-- 👉 Issue Date -->
               <h6 class="text-h6 font-weight-regular">
                 <span>Date Issued: </span>
-                <span>{{ new Date(invoice.issuedDate).toLocaleDateString('en-GB') }}</span>
+                <span>{{ new Date(orderData.createdAt).toLocaleDateString('en-GB') }}</span>
               </h6>
-
-              <!-- 👉 Due Date -->
               <h6 class="text-h6 font-weight-regular">
                 <span>Due Date: </span>
-                <span>{{ new Date(invoice.dueDate).toLocaleDateString('en-GB') }}</span>
+                <span>{{ new Date(orderData.updatedAt).toLocaleDateString('en-GB') }}</span>
               </h6>
             </div>
           </div>
-          <!-- !SECTION -->
 
-          <!-- 👉 Payment Details -->
           <VRow class="print-row mb-6">
             <VCol class="text-no-wrap">
               <h6 class="text-h6 mb-4">
                 Invoice To:
               </h6>
-
-              <p class="mb-0">
-                {{ invoice.client.name }}
-              </p>
-              <p class="mb-0">
-                {{ invoice.client.company }}
-              </p>
-              <p class="mb-0">
-                {{ invoice.client.address }}, {{ invoice.client.country }}
-              </p>
-              <p class="mb-0">
-                {{ invoice.client.contact }}
-              </p>
-              <p class="mb-0">
-                {{ invoice.client.companyEmail }}
-              </p>
+              <p>{{ orderData.User?.name }}</p>
+              <p>{{ orderData.User?.email }}</p>
+              <p>{{ orderData.address?.street }}, {{ orderData.address?.country }}</p>
+              <p>{{ orderData.address?.phoneNumber }}</p>
             </VCol>
 
             <VCol class="text-no-wrap">
@@ -140,90 +99,42 @@ const printInvoice = () => {
                   <tr>
                     <td class="pe-4">
                       Total Due:
-                    </td>
-                    <td>
-                      {{ paymentDetails.totalDue }}
-                    </td>
+                    </td><td>{{ orderData.totalAmount }}</td>
                   </tr>
                   <tr>
                     <td class="pe-4">
                       Bank Name:
-                    </td>
-                    <td>
-                      {{ paymentDetails.bankName }}
-                    </td>
+                    </td><td>{{ orderData.paymentMethod || 'ABA Bank' }}</td>
                   </tr>
                   <tr>
                     <td class="pe-4">
                       Country:
-                    </td>
-                    <td>
-                      {{ paymentDetails.country }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="pe-4">
-                      IBAN:
-                    </td>
-                    <td>
-                      {{ paymentDetails.iban }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="pe-4">
-                      SWIFT Code:
-                    </td>
-                    <td>
-                      {{ paymentDetails.swiftCode }}
-                    </td>
+                    </td><td>{{ orderData.address?.country }}</td>
                   </tr>
                 </tbody>
               </table>
             </VCol>
           </VRow>
 
-          <!-- 👉 invoice Table -->
           <VTable class="invoice-preview-table border text-high-emphasis overflow-hidden mb-6">
             <thead>
               <tr>
-                <th scope="col">
-                  ITEM
-                </th>
-                <th scope="col">
-                  DESCRIPTION
-                </th>
-                <th
-                  scope="col"
-                  class="text-center"
-                >
+                <th>ITEM</th><th>DESCRIPTION</th><th class="text-center">
                   HOURS
-                </th>
-                <th
-                  scope="col"
-                  class="text-center"
-                >
+                </th><th class="text-center">
                   QTY
-                </th>
-                <th
-                  scope="col"
-                  class="text-center"
-                >
+                </th><th class="text-center">
                   TOTAL
                 </th>
               </tr>
             </thead>
-
             <tbody class="text-base">
               <tr
-                v-for="item in purchasedProducts"
+                v-for="item in orderItems"
                 :key="item.name"
               >
-                <td class="text-no-wrap">
-                  {{ item.name }}
-                </td>
-                <td class="text-no-wrap">
-                  {{ item.description }}
-                </td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.description }}</td>
                 <td class="text-center">
                   {{ item.hours }}
                 </td>
@@ -231,37 +142,33 @@ const printInvoice = () => {
                   {{ item.qty }}
                 </td>
                 <td class="text-center">
-                  ${{ item.price }}
+                  ${{ (item.price * item.qty).toFixed(2) }}
                 </td>
               </tr>
             </tbody>
           </VTable>
 
-          <!-- 👉 Total -->
           <div class="d-flex justify-space-between flex-column flex-sm-row print-row">
             <div class="mb-2">
               <div class="d-flex align-center mb-1">
                 <h6 class="text-h6 me-2">
                   Salesperson:
                 </h6>
-                <span>Jenny Parker</span>
+                <span>{{ orderData.salesperson || 'N/A' }}</span>
               </div>
               <p>Thanks for your business</p>
             </div>
-
             <div>
-
               <VDivider class="my-2" />
-
               <table class="w-100">
                 <tbody>
                   <tr>
                     <td class="pe-16">
                       Total:
                     </td>
-                    <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
+                    <td class="text-end">
                       <h6 class="text-base font-weight-medium">
-                        $1690
+                        ${{ orderData.totalAmount }}
                       </h6>
                     </td>
                   </tr>
@@ -271,12 +178,9 @@ const printInvoice = () => {
           </div>
 
           <VDivider class="my-6 border-dashed" />
-
           <p class="mb-0">
-            <span class="text-high-emphasis font-weight-medium me-1">
-              Note:
-            </span>
-            <span>It was a pleasure working with you and your team. We hope you will keep us in mind for future freelance projects. Thank You!</span>
+            <span class="text-high-emphasis font-weight-medium me-1">Note:</span>
+            <span>{{ orderData.note || 'It was a pleasure working with you.' }}</span>
           </p>
         </VCard>
       </VCol>
@@ -288,7 +192,6 @@ const printInvoice = () => {
       >
         <VCard>
           <VCardText>
-
             <div class="d-flex flex-wrap gap-4">
               <VBtn
                 variant="tonal"
@@ -304,19 +207,7 @@ const printInvoice = () => {
       </VCol>
     </VRow>
 
-    <!-- 👉 Add Payment Sidebar -->
     <InvoiceAddPaymentDrawer v-model:is-drawer-open="isAddPaymentSidebarVisible" />
-
-    <!-- 👉 Send Invoice Sidebar -->
-    <InvoiceSendInvoiceDrawer v-model:is-drawer-open="isSendPaymentSidebarVisible" />
-  </section>
-  <section v-else>
-    <VAlert
-      type="error"
-      variant="tonal"
-    >
-      Invoice with ID  {{ route.params.id }} not found!
-    </VAlert>
   </section>
 </template>
 

@@ -1,71 +1,44 @@
 <script setup>
+import { ref, toRef } from 'vue'
 import InvoiceProductEdit from './InvoiceProductEdit.vue'
 import { VNodeRenderer } from '@layouts/components/VNodeRenderer'
 import { themeConfig } from '@themeConfig'
 
+// Props & emits
 const props = defineProps({
   data: {
-    type: null,
+    type: Object,
     required: true,
   },
 })
 
-const emit = defineEmits([
-  'push',
-  'remove',
+const emit = defineEmits(['push', 'remove'])
+
+// Invoice values from props
+const invoice = toRef(props.data, 'invoice')
+const salesperson = toRef(props.data, 'salesperson')
+const thanksNote = toRef(props.data, 'thanksNote')
+const note = toRef(props.data, 'note')
+
+// Dummy clients list (you can replace with real API if needed)
+const clients = ref([
+  { name: props.data?.userData?.fullName || 'Client' },
 ])
-
-const invoice = ref(props.data.invoice)
-const salesperson = ref(props.data.salesperson)
-const thanksNote = ref(props.data.thanksNote)
-const note = ref(props.data.note)
-
-// 👉 Clients
-const clients = ref([])
-
-// 👉 fetchClients
-const fetchClients = async () => {
-  const { data, error } = await useApi('/apps/invoice/clients')
-  if (error.value)
-    console.log(error.value)
-  else
-    clients.value = data.value
-}
-
-fetchClients()
-
-// 👉 Add item function
-const addItem = () => {
-  emit('push', {
-    title: 'App Design',
-    cost: 24,
-    hours: 1,
-    description: 'Designed UI kit & app pages.',
-  })
-}
-
-const removeProduct = id => {
-  emit('remove', id)
-}
 </script>
+
 
 <template>
   <VCard class="pa-6 pa-sm-12">
     <!-- SECTION Header -->
     <div class="d-flex flex-wrap justify-space-between flex-column rounded bg-var-theme-background flex-sm-row gap-6 pa-6 mb-6">
-      <!-- 👉 Left Content -->
+      <!-- 👉 Left -->
       <div>
         <div class="d-flex align-center app-logo mb-6">
-          <!-- 👉 Logo -->
           <VNodeRenderer :nodes="themeConfig.app.logo" />
-
-          <!-- 👉 Title -->
           <h6 class="app-logo-title">
             {{ themeConfig.app.title }}
           </h6>
         </div>
-
-        <!-- 👉 Address -->
         <p class="text-high-emphasis mb-0">
           Office 149, 450 South Brand Brooklyn
         </p>
@@ -77,13 +50,12 @@ const removeProduct = id => {
         </p>
       </div>
 
-      <!-- 👉 Right Content -->
+      <!-- 👉 Right -->
       <div class="d-flex flex-column gap-2">
-        <!-- 👉 Invoice Id -->
         <div class="d-flex align-start align-sm-center gap-x-4 font-weight-medium text-lg flex-column flex-sm-row">
           <span
             class="text-high-emphasis text-sm-end"
-            style="inline-size: 5.625rem ;"
+            style="inline-size: 5.625rem;"
           >Invoice:</span>
           <span>
             <AppTextField
@@ -96,13 +68,11 @@ const removeProduct = id => {
           </span>
         </div>
 
-        <!-- 👉 Issue Date -->
         <div class="d-flex gap-x-4 align-start align-sm-center flex-column flex-sm-row">
           <span
             class="text-high-emphasis text-sm-end"
             style="inline-size: 5.625rem;"
           >Date Issued:</span>
-
           <span style="inline-size: 9.5rem;">
             <AppDateTimePicker
               id="issued-date"
@@ -113,7 +83,6 @@ const removeProduct = id => {
           </span>
         </div>
 
-        <!-- 👉 Due Date -->
         <div class="d-flex gap-x-4 align-start align-sm-center flex-column flex-sm-row">
           <span
             class="text-high-emphasis text-sm-end"
@@ -130,14 +99,13 @@ const removeProduct = id => {
         </div>
       </div>
     </div>
-    <!-- !SECTION -->
 
+    <!-- Invoice To + Bill To -->
     <VRow>
       <VCol class="text-no-wrap">
         <h6 class="text-h6 mb-4">
           Invoice To:
         </h6>
-
         <VSelect
           id="client-name"
           v-model="invoice.client"
@@ -150,22 +118,19 @@ const removeProduct = id => {
           style="inline-size: 11.875rem;"
         />
         <p class="mb-0">
-          {{ invoice.client.name }}
+          {{ props.data.userData?.fullName }}
         </p>
         <p class="mb-0">
-          {{ invoice.client.company }}
-        </p>
-        <p
-          v-if="invoice.client.address"
-          class="mb-0"
-        >
-          {{ invoice.client.address }}, {{ invoice.client.country }}
+          {{ props.data.userData?.email }}
         </p>
         <p class="mb-0">
-          {{ invoice.client.contact }}
+          {{ props.data.currentBillingAddress?.addressLine1 }}
         </p>
         <p class="mb-0">
-          {{ invoice.client.companyEmail }}
+          {{ props.data.currentBillingAddress?.selectedCountry }}
+        </p>
+        <p class="mb-0">
+          {{ props.data.currentBillingAddress?.contact }}
         </p>
       </VCol>
 
@@ -173,42 +138,25 @@ const removeProduct = id => {
         <h6 class="text-h6 mb-4">
           Bill To:
         </h6>
-
         <table>
           <tbody>
             <tr>
               <td class="pe-4">
                 Total Due:
               </td>
-              <td>{{ props.data.paymentDetails.totalDue }}</td>
+              <td>${{ props.data.invoice?.totalAmount }}</td>
             </tr>
             <tr>
               <td class="pe-4">
                 Bank Name:
               </td>
-              <td>{{ props.data.paymentDetails.bankName }}</td>
+              <td>ABA Bank</td>
             </tr>
             <tr>
               <td class="pe-4">
                 Country:
               </td>
-              <td>{{ props.data.paymentDetails.country }}</td>
-            </tr>
-            <tr>
-              <td class="pe-4">
-                IBAN:
-              </td>
-              <td>
-                <p class="text-wrap me-4">
-                  {{ props.data.paymentDetails.iban }}
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td class="pe-4">
-                SWIFT Code:
-              </td>
-              <td>{{ props.data.paymentDetails.swiftCode }}</td>
+              <td>{{ props.data.currentBillingAddress?.selectedCountry }}</td>
             </tr>
           </tbody>
         </table>
@@ -216,7 +164,8 @@ const removeProduct = id => {
     </VRow>
 
     <VDivider class="my-6 border-dashed" />
-    <!-- 👉 Add purchased products -->
+
+    <!-- Products -->
     <div class="add-products-form">
       <div
         v-for="(product, index) in props.data.purchasedProducts"
@@ -226,14 +175,14 @@ const removeProduct = id => {
         <InvoiceProductEdit
           :id="index"
           :data="product"
-          @remove-product="removeProduct"
+          @remove-product="$emit('remove', index)"
         />
       </div>
     </div>
 
     <VDivider class="my-6 border-dashed" />
 
-    <!-- 👉 Total Amount -->
+    <!-- Total & Notes -->
     <div class="d-flex justify-space-between flex-wrap flex-column flex-sm-row">
       <div class="mb-6 mb-sm-0">
         <div class="d-flex align-center mb-4">
@@ -247,7 +196,6 @@ const removeProduct = id => {
             placeholder="John Doe"
           />
         </div>
-
         <AppTextField
           id="thanks-note"
           v-model="thanksNote"
@@ -264,7 +212,7 @@ const removeProduct = id => {
               </td>
               <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
                 <h6 class="text-h6">
-                  $1690
+                  ${{ props.data.invoice?.totalAmount }}
                 </h6>
               </td>
             </tr>
@@ -288,3 +236,4 @@ const removeProduct = id => {
     </div>
   </VCard>
 </template>
+
