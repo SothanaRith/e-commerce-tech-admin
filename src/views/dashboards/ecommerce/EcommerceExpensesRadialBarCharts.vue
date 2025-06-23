@@ -1,14 +1,30 @@
 <script setup>
 import { useTheme } from 'vuetify'
 import { hexToRgb } from '@layouts/utils'
+import { computed, onMounted } from 'vue'
+import { useDashboardStore } from "@/plugins/store/dashboard.js"
 
 const vuetifyTheme = useTheme()
-const series = [78]
+const dashboardStore = useDashboardStore()
+
+onMounted(() => {
+  dashboardStore.fetchOverview()
+})
+
+const revenue = computed(() => parseFloat(dashboardStore.overview?.revenue || 0))
+
+const percent = computed(() => {
+  const goal = 100000 // example goal value (adjust as needed)
+  
+  return goal ? ((revenue.value / goal) * 100).toFixed(2) : 0
+})
+
+const series = computed(() => [parseFloat(percent.value)])
 
 const chartOptions = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors
   const variableTheme = vuetifyTheme.current.value.variables
-  
+
   return {
     chart: {
       sparkline: { enabled: true },
@@ -30,7 +46,7 @@ const chartOptions = computed(() => {
           name: { show: false },
           value: {
             fontSize: '24px',
-            color: `rgba(${ hexToRgb(currentTheme['on-background']) },${ variableTheme['high-emphasis-opacity'] })`,
+            color: `rgba(${hexToRgb(currentTheme['on-background'])},${variableTheme['high-emphasis-opacity']})`,
             fontWeight: 600,
             offsetY: -5,
           },
@@ -93,12 +109,13 @@ const chartOptions = computed(() => {
   <VCard>
     <VCardItem class="pb-3">
       <VCardTitle>
-        82.5K
+        ${{ revenue.toLocaleString() }}
       </VCardTitle>
       <VCardSubtitle>
-        Expenses
+        Revenue Progress
       </VCardSubtitle>
     </VCardItem>
+
     <VCardText>
       <VueApexCharts
         :options="chartOptions"
@@ -108,7 +125,7 @@ const chartOptions = computed(() => {
       />
 
       <div class="text-sm text-center clamp-text text-disabled mt-3">
-        $21k Expenses more than last month
+        {{ (100000 - revenue) > 0 ? `$${(100000 - revenue).toLocaleString()} left to reach monthly goal` : 'Target met 🎉' }}
       </div>
     </VCardText>
   </VCard>

@@ -1,24 +1,44 @@
 <script setup>
 import { useTheme } from 'vuetify'
 import { hexToRgb } from '@layouts/utils'
+import { computed, onMounted } from 'vue'
+import { useDashboardStore } from "@/plugins/store/dashboard.js"
 
 const vuetifyTheme = useTheme()
+const dashboardStore = useDashboardStore()
 
-const series = [{
-  data: [
-    0,
-    25,
-    10,
-    40,
-    25,
-    55,
-  ],
-}]
+onMounted(() => {
+  dashboardStore.fetchSalesChart('monthly')
+})
+
+// Prepare chart series from backend sales data
+const series = computed(() => [{
+  name: 'Revenue',
+  data: (dashboardStore.salesChart || []).map(entry => parseFloat(entry.revenue || 0)),
+}])
+
+// Format last point as current profit
+const latestRevenue = computed(() => {
+  const data = dashboardStore.salesChart || []
+  if (data.length === 0) return 0
+  
+  return parseFloat(data[data.length - 1].revenue || 0)
+})
+
+// Simple percent change compared to previous point
+const percentChange = computed(() => {
+  const data = dashboardStore.salesChart || []
+  if (data.length < 2) return 0
+  const last = parseFloat(data[data.length - 1].revenue || 0)
+  const prev = parseFloat(data[data.length - 2].revenue || 0)
+  
+  return prev ? (((last - prev) / prev) * 100).toFixed(2) : 0
+})
 
 const chartOptions = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors
   const variableTheme = vuetifyTheme.current.value.variables
-  
+
   return {
     chart: {
       height: 90,
@@ -27,7 +47,7 @@ const chartOptions = computed(() => {
       toolbar: { show: false },
     },
     grid: {
-      borderColor: `rgba(${ hexToRgb(String(variableTheme['border-color'])) },${ variableTheme['border-opacity'] })`,
+      borderColor: `rgba(${hexToRgb(String(variableTheme['border-color']))},${variableTheme['border-opacity']})`,
       strokeDashArray: 6,
       xaxis: { lines: { show: true } },
       yaxis: { lines: { show: false } },
@@ -59,7 +79,7 @@ const chartOptions = computed(() => {
       strokeWidth: 3.2,
       discrete: [{
         seriesIndex: 0,
-        dataPointIndex: 5,
+        dataPointIndex: series.value[0].data.length - 1,
         fillColor: currentTheme.surface,
         strokeColor: currentTheme.info,
         size: 5,
@@ -78,13 +98,10 @@ const chartOptions = computed(() => {
 <template>
   <VCard>
     <VCardItem class="pb-3">
-      <VCardTitle>
-        Profit
-      </VCardTitle>
-      <VCardSubtitle>
-        Last Month
-      </VCardSubtitle>
+      <VCardTitle>Profit</VCardTitle>
+      <VCardSubtitle>This Month</VCardSubtitle>
     </VCardItem>
+
     <VCardText>
       <VueApexCharts
         type="line"
@@ -95,10 +112,13 @@ const chartOptions = computed(() => {
 
       <div class="d-flex align-center justify-space-between gap-x-2 mt-3">
         <h4 class="text-h4 text-center font-weight-medium">
-          624k
+          ${{ latestRevenue.toLocaleString() }}
         </h4>
-        <span class="text-sm text-success">
-          +8.24%
+        <span
+          class="text-sm"
+          :class="parseFloat(percentChange) >= 0 ? 'text-success' : 'text-error'"
+        >
+          {{ parseFloat(percentChange) >= 0 ? '+' : '' }}{{ percentChange }}%
         </span>
       </div>
     </VCardText>
