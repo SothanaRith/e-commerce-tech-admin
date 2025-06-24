@@ -12,6 +12,7 @@ const totalAmount = ref()
 const trackingSteps = ref()
 
 const isConfirmDialogVisible = ref(false)
+const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 const isUserInfoEditDialogVisible = ref(false)
 const isEditAddressDialogVisible = ref(false)
 
@@ -62,7 +63,7 @@ const fetchData = async () => {
   // Process product list
   orderDetail.value = orderData.value?.orderItems?.map(item => ({
     productName: item.Product?.name || 'N/A',
-    productImage: `${item.Product?.imageUrl?.[0] || ''}`,
+    productImage: `${baseUrl}${item.Product?.imageUrl?.[0] || ''}`,
     subtitle: item.Product?.description || '',
     price: parseFloat(item.Product?.price || 0).toFixed(2),
     quantity: item.quantity,

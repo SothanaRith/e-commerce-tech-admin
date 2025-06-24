@@ -125,7 +125,6 @@ const addProduct = async () => {
             </VRow>
           </VCardText>
         </VCard>
-
         <!-- 👉 Media -->
         <VCard class="mb-6">
           <VCardItem>

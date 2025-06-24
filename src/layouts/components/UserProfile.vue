@@ -1,6 +1,7 @@
 <script setup>
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 
+const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 const router = useRouter()
 const ability = useAbility()
 
@@ -91,7 +92,7 @@ const userProfileList = [
                   >
                     <VImg
                       v-if="userData && userData.avatar"
-                      :src="userData.avatar"
+                      :src="`${baseUrl}${userData.avatar}`"
                     />
                     <VIcon
                       v-else

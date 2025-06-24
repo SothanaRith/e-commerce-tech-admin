@@ -13,6 +13,7 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
+const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 const selectedStatus = ref()
 const selectedCategory = ref()
 const selectedStock = ref()
@@ -77,24 +78,23 @@ const products = computed(() =>
   useProduct.product.map(product => ({
     id: product.id,
     productName: product.name,
-    productBrand: 'Smartwatch', // static or dynamic if available
+    productBrand: '--', // static or dynamic if available
     category: categoryMap[product.categoryId] || 'Uncategorized',
     stock: product.totalStock > 0,
     sku: `SKU-${product.id}`, // example SKU
     price: `$${parseFloat(product.price).toFixed(2)}`,
     qty: product.totalStock,
     status: product.totalStock > 0 ? 'Published' : 'Inactive',
-    images: product.imageUrl,
+    image: `${baseUrl}${product.imageUrl[0]}`,
   })),
 )
+
 
 watch(
   [selectedStatus, selectedCategory, selectedStock, searchQuery, itemsPerPage, page],
   async () => {
 
     await useProduct.fetchProduct()
-
-    console.log(useProduct.product)
 
   }, { immediate: true },
 )
@@ -167,12 +167,20 @@ const deleteProduct = async id => {
         <template #item.product="{ item }">
           <div class="d-flex align-center gap-x-4">
             <VAvatar
-              v-if="item.image"
-              size="38"
-              variant="tonal"
-              rounded
-              :image="item.image"
-            />
+              size="34"
+              :color="!item.image ? 'primary' : ''"
+              :variant="!item.image ? 'tonal' : undefined"
+            >
+              <VImg
+                v-if="item.image"
+                :src="`${item.image}`"
+              />
+
+              <span
+                v-else
+                class="font-weight-medium"
+              >{{ avatarText(item.image) }}</span>
+            </VAvatar>
             <div class="d-flex flex-column">
               <span class="text-body-1 font-weight-medium text-high-emphasis">{{ item.productName }}</span>
               <span class="text-body-2">{{ item.productBrand }}</span>

@@ -3,6 +3,8 @@ import { useOrderStore } from "@/plugins/store/order"
 import { computed, watch } from "vue"
 import { useProductStore } from "@/plugins/store/product.js"
 
+const baseUrl = import.meta.env.VITE_BASE_IMG_URL
+
 // Data table Headers
 const headers = [
   {
@@ -313,7 +315,7 @@ const updateOrderStatus = async (id, orderStatus) => {
             >
               <VImg
                 v-if="item.User.coverImage"
-                :src="`${item.User.coverImage}`"
+                :src="`${baseUrl}${item.User.coverImage}`"
               />
 
               <span

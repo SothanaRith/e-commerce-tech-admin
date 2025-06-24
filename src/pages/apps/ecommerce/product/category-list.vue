@@ -3,6 +3,7 @@ import ECommerceAddCategoryDrawer from '@/views/apps/ecommerce/ECommerceAddCateg
 import { useProductStore } from "@/plugins/store/product"
 
 const categoryData = ref([])
+const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 
 const headers = [
   {
@@ -73,12 +74,12 @@ categoryData.value = useProduct.category
           <div class="d-flex align-center gap-x-3">
             <VAvatar
               size="34"
-              :color="!item.image ? 'primary' : ''"
-              :variant="!item.image ? 'tonal' : undefined"
+              :color="!item.imageUrl ? 'primary' : ''"
+              :variant="!item.imageUrl ? 'tonal' : undefined"
             >
               <VImg
-                v-if="item.image"
-                :src="`${item.image}`"
+                v-if="item.imageUrl"
+                :src="`${baseUrl}${item.imageUrl}`"
               />
               <span
                 v-else
