@@ -7,9 +7,8 @@ const ability = useAbility()
 
 // TODO: Get type from backend
 const userData = useCookie('userData')
+
 const logout = async () => {
-  console.log(userData)
-  return
   // Remove "accessToken" from cookie
   useCookie('accessToken').value = null
 

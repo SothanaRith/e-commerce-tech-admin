@@ -13,7 +13,7 @@ export const useUserStore = defineStore('userUser', () => {
   const userData = ref(null)
 
   const fetchUser = async () => {
-    const { data } = await useApi(createUrl('/user/get-all-categories', {
+    const { data } = await useApi(createUrl('/users/getUsers', {
       query: {
         q: searchQuery,
         sortBy,
@@ -24,12 +24,12 @@ export const useUserStore = defineStore('userUser', () => {
     userData.value = data
   }
 
-  const user = computed(() => userData.value?.value.data || [])
-  const totalUser = computed(() => userData.value?.value.total || 0)
+  const user = computed(() => userData.value?.value.users || [])
+  const totalUser = computed(() => userData.value?.value.users.length || 0)
 
   const fetchUserById = async userId => {
     try {
-      const { data } = await useApi(`/user/get/${userId}`)
+      const { data } = await useApi(`/users/getProfile/${userId}`)
       const u = data.value
 
       if (u) {
@@ -57,27 +57,23 @@ export const useUserStore = defineStore('userUser', () => {
     await fetchUser()
   }, { immediate: true })
 
-  // Add new user
-  const addUser = async userData => {
-
-    await $api('/user/create-user', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-      headers: { 'Content-Type': 'application/json' },
-    })
-
-    await fetchUser()
-  }
-
   // Edit user
   const editUser = async (id, userData) => {
 
-    await $api(`/user/update-user/${id}`, {
+    await $api(`/users/updateProfile/${id}`, {
       method: 'POST',
       body: JSON.stringify(userData),
       headers: { 'Content-Type': 'application/json' },
     })
+    await fetchUser()
+  }
 
+  const editUserProfile = async (id, userData) => {
+
+    await $api(`/users/updateProfilePicture/${id}`, {
+      method: 'POST',
+      body: userData,
+    })
     await fetchUser()
   }
 
@@ -93,8 +89,7 @@ export const useUserStore = defineStore('userUser', () => {
     updateOptions,
     fetchUser,
     fetchUserById,
-    addUser,
     editUser,
-
+    editUserProfile,
   }
 })
