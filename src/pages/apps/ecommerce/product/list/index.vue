@@ -5,8 +5,6 @@ import { useProductStore } from "@/plugins/store/product"
 const headers = [
   { title: 'Product', key: 'product' },
   { title: 'Category', key: 'category' },
-  { title: 'Stock', key: 'stock', sortable: false },
-  { title: 'SKU', key: 'sku' },
   { title: 'Price', key: 'price' },
   { title: 'QTY', key: 'qty' },
   { title: 'Status', key: 'status' },
@@ -80,8 +78,6 @@ const products = computed(() =>
     productName: product.name,
     productBrand: '--', // static or dynamic if available
     category: categoryMap[product.categoryId] || 'Uncategorized',
-    stock: product.totalStock > 0,
-    sku: `SKU-${product.id}`, // example SKU
     price: `$${parseFloat(product.price).toFixed(2)}`,
     qty: product.totalStock,
     status: product.totalStock > 0 ? 'Published' : 'Inactive',
@@ -99,9 +95,6 @@ watch(
   }, { immediate: true },
 )
 
-// Transform product data to match table structure
-
-
 const totalProduct = computed(() => useProduct.totalProduct)
 
 const deleteProduct = async id => {
@@ -111,7 +104,6 @@ const deleteProduct = async id => {
 
 <template>
   <div>
-
     <!-- 👉 products -->
     <VCard class="mb-6">
       <VDivider />
@@ -132,13 +124,6 @@ const deleteProduct = async id => {
             v-model="itemsPerPage"
             :items="[5, 10, 20, 25, 50]"
           />
-          <VBtn
-            variant="tonal"
-            color="secondary"
-            prepend-icon="tabler-upload"
-          >
-            Export
-          </VBtn>
           <VBtn
             color="primary"
             prepend-icon="tabler-plus"
@@ -224,7 +209,7 @@ const deleteProduct = async id => {
 
         <!-- actions -->
         <template #item.actions="{ item }">
-          <IconBtn>
+          <IconBtn @click="$router.push(`/apps/ecommerce/product/edit/${item.id}`)">
             <VIcon icon="tabler-edit" />
           </IconBtn>
 

@@ -16,6 +16,7 @@ export const useProductStore = defineStore('userProduct', () => {
   const selectedRows = ref([])
 
   const product = ref([])
+  const productData = ref()
   const category = ref([])
   const totalProduct = ref(0)
   const router = useRouter()
@@ -53,6 +54,36 @@ export const useProductStore = defineStore('userProduct', () => {
     totalProduct.value = data.value?.pagination?.totalItems || 0
   }
 
+  const fetchProductById = async id => {
+    const { data } = await useApi(createUrl(`/product/get-product/${id}/1`, {
+    }))
+
+    console.log(data.value)
+    productData.value = data.value
+
+    return data.value
+  }
+
+  const updateProduct = async (id, formData) => {
+    if (isLoading.value) {
+      return
+    }
+
+    isLoading.value = true
+
+    try {
+      await $api(`/product/update-product/${id}`, {
+        method: 'POST',
+        body: formData,
+      })
+      await fetchProduct()
+      isLoading.value = false
+      router.push({ name: 'apps-ecommerce-product-list' })
+    } catch (e) {
+      isLoading.value = false
+    }
+  }
+
   const fetchCategory = async () => {
     const { data } = await useApi(createUrl('category/get-all-categories', {
     }))
@@ -60,7 +91,7 @@ export const useProductStore = defineStore('userProduct', () => {
     console.log(data)
     category.value = data.value?.categories || []
   }
-
+  
   const addCategory = async formData => {
 
     await $api('/category/create-category', {
@@ -155,5 +186,8 @@ export const useProductStore = defineStore('userProduct', () => {
     fetchCategory,
     addCategory,
     updateTotalStock,
+    updateProduct,
+    fetchProductById,
+    productData,
   }
 })

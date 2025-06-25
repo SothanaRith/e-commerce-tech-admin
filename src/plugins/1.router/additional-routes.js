@@ -54,7 +54,6 @@ export const routes = [
     },
   },
   {
-    
     path: '/apps/ecommerce/dashboard',
     name: 'apps-ecommerce-dashboard',
     component: () => import('@/pages/dashboards/ecommerce.vue'),
