@@ -10,6 +10,12 @@ onMounted(async () => {
   await useProduct.fetchCategory()
 })
 
+const variantAttributes = ref([
+  { name: 'Color', value: 'Black' },
+  { name: 'Size', value: 'M' },
+])
+
+
 const uploadedFiles = ref([])
 const relatedProducts = ref([])
 const productCategory = ref([])
@@ -53,10 +59,10 @@ const addProduct = async () => {
   formData.append('variants[0][stock]', productStock.value)
   formData.append('variants[0][sku]', productSKU.value)
   formData.append('variants[0][price]', productPrice.value)
-  formData.append('variants[0][attributes][0][name]', 'Color')
-  formData.append('variants[0][attributes][0][value]', 'Black')
-  formData.append('variants[0][attributes][1][name]', 'Size')
-  formData.append('variants[0][attributes][1][value]', 'M')
+  variantAttributes.value.forEach((attr, index) => {
+    formData.append(`variants[0][attributes][${index}][name]`, attr.name)
+    formData.append(`variants[0][attributes][${index}][value]`, attr.value)
+  })
 
   formData.append('relatedProductIds', JSON.stringify(relatedProducts.value))
 
@@ -139,6 +145,47 @@ const addProduct = async () => {
             <DropZone @update:files="val => uploadedFiles.value = val" />
           </VCardText>
         </VCard>
+
+        <!-- ✅ Variant Attributes -->
+        <div>
+          <div class="text-sm font-weight-medium mb-2">Variant Attributes</div>
+
+          <div
+            v-for="(attr, index) in variantAttributes"
+            :key="index"
+            class="d-flex align-center gap-2 mb-2"
+          >
+            <AppTextField
+              v-model="attr.name"
+              label="Name"
+              placeholder="e.g. Color"
+              style="width: 150px"
+            />
+            <AppTextField
+              v-model="attr.value"
+              label="Value"
+              placeholder="e.g. Red"
+              style="width: 150px"
+            />
+            <VBtn
+              icon
+              size="small"
+              color="error"
+              @click="variantAttributes.splice(index, 1)"
+            >
+              <VIcon icon="tabler-x" />
+            </VBtn>
+          </div>
+
+          <VBtn
+            variant="tonal"
+            color="primary"
+            size="small"
+            @click="variantAttributes.push({ name: '', value: '' })"
+          >
+            + Add Attribute
+          </VBtn>
+        </div>
       </VCol>
       <VCol
         md="4"

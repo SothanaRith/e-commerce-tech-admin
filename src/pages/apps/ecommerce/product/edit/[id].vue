@@ -20,6 +20,10 @@ const variantsProduct = ref()
 const productDescription = ref()
 const productName = ref()
 const isLoading = ref(false)
+const variantAttributes = ref([
+  { name: 'Color', value: 'Black' },
+  { name: 'Size', value: 'M' },
+])
 
 onMounted(async () => {
   await useProduct.fetchProduct()
@@ -83,11 +87,13 @@ const submitProduct = async () => {
   formData.append('stock', productStock.value)
   formData.append('variants[0][sku]', productSKU.value)
   formData.append('variants[0][price]', productPrice.value)
-  formData.append('variants[0][attributes][0][name]', 'Color')
-  formData.append('variants[0][attributes][0][value]', 'Black')
-  formData.append('variants[0][attributes][1][name]', 'Size')
-  formData.append('variants[0][attributes][1][value]', 'M')
   formData.append('relatedProductIds', JSON.stringify(relatedProducts.value))
+
+  // 🔁 Dynamically append variant attributes
+  variantAttributes.value.forEach((attr, index) => {
+    formData.append(`variants[0][attributes][${index}][name]`, attr.name)
+    formData.append(`variants[0][attributes][${index}][value]`, attr.value)
+  })
 
   if (productId.value) {
     // Update product if productId exists
@@ -197,6 +203,42 @@ const submitProduct = async () => {
 
             <!-- DropZone for new image uploads -->
             <DropZone @update:files="val => uploadedFiles.value = val" />
+          </VCardText>
+        </VCard>
+
+        <VCard
+          title="Variant Attributes"
+          class="mb-6"
+        >
+          <VCardText>
+            <VRow
+              v-for="(attr, index) in variantAttributes"
+              :key="index"
+              class="mb-2"
+            >
+              <VCol cols="6">
+                <AppTextField
+                  v-model="attr.name"
+                  label="Attribute Name"
+                  placeholder="e.g. Color"
+                />
+              </VCol>
+              <VCol cols="6">
+                <AppTextField
+                  v-model="attr.value"
+                  label="Attribute Value"
+                  placeholder="e.g. Red"
+                />
+              </VCol>
+            </VRow>
+
+            <VBtn
+              color="primary"
+              size="small"
+              @click="variantAttributes.push({ name: '', value: '' })"
+            >
+              Add Attribute
+            </VBtn>
           </VCardText>
         </VCard>
       </VCol>
