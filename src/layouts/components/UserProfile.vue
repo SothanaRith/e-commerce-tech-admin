@@ -35,7 +35,7 @@ const userProfileList = [
     title: 'Profile',
     to: {
       name: 'apps-user-view-id',
-      params: { id: 21 },
+      params: { id: userData.value.id },
     },
   },
 ]

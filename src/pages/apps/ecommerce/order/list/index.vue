@@ -398,10 +398,10 @@ const updateOrderStatus = async (id, orderStatus) => {
                     Approve
                   </VListItem>
                 </div>
-                <div v-if="item.status.toUpperCase() !== 'cancelled'.toUpperCase()">
+                <div v-if="item.status.toUpperCase() !== 'cancelled'.toUpperCase() && item.status.toUpperCase() !== 'completed'.toUpperCase()">
                   <VListItem
                     value="delete"
-                    :disabled="item.status.toUpperCase() === 'cancelled'.toUpperCase()"
+                    :disabled="item.status.toUpperCase() === 'cancelled'.toUpperCase() && item.status.toUpperCase() !== 'completed'.toUpperCase()"
                     @click="updateOrderStatus(item.id, changeCancelStatus(item.status))"
                   >
                     Reject

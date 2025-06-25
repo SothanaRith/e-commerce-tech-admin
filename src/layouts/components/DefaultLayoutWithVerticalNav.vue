@@ -10,8 +10,18 @@ import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
 import UserProfile from '@/layouts/components/UserProfile.vue'
 import NavBarI18n from '@core/components/I18n.vue'
 
+const userData = useCookie('userData')
+
 // @layouts plugin
 import { VerticalNavLayout } from '@layouts'
+
+const greeting = computed(() => {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+
+  return 'Good evening'
+})
 </script>
 
 <template>
@@ -32,12 +42,20 @@ import { VerticalNavLayout } from '@layouts'
 
         <!--        <NavSearchBar class="ms-lg-n3" /> -->
 
+        <div class="d-flex">
+          <h5 class="text-h5 font-weight-thin">
+            {{ greeting }},
+          </h5>
+          <h5 class="text-h5 font-weight-medium ms-1">
+            {{ userData.name }}
+          </h5>
+        </div>
         <VSpacer />
 
-        <NavBarI18n
-          v-if="themeConfig.app.i18n.enable && themeConfig.app.i18n.langConfig?.length"
-          :languages="themeConfig.app.i18n.langConfig"
-        />
+        <!--        <NavBarI18n -->
+        <!--          v-if="themeConfig.app.i18n.enable && themeConfig.app.i18n.langConfig?.length" -->
+        <!--          :languages="themeConfig.app.i18n.langConfig" -->
+        <!--        /> -->
         <NavbarThemeSwitcher class="me-1" />
         <!--        <NavbarShortcuts /> -->
         <!--        <NavBarNotifications class="me-1" /> -->
