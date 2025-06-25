@@ -17,26 +17,6 @@ const selectedCategory = ref()
 const selectedStock = ref()
 const selectedRows = ref([])
 
-const status = ref([
-  { title: 'Scheduled', value: 'Scheduled' },
-  { title: 'Publish', value: 'Published' },
-  { title: 'Inactive', value: 'Inactive' },
-])
-
-const categories = ref([
-  { title: 'Accessories', value: 'Accessories' },
-  { title: 'Home Decor', value: 'Home Decor' },
-  { title: 'Electronics', value: 'Electronics' },
-  { title: 'Shoes', value: 'Shoes' },
-  { title: 'Office', value: 'Office' },
-  { title: 'Games', value: 'Games' },
-])
-
-const stockStatus = ref([
-  { title: 'In Stock', value: true },
-  { title: 'Out of Stock', value: false },
-])
-
 const updateOptions = options => {
   sortBy.value = options.sortBy[0]?.key
   orderBy.value = options.sortBy[0]?.order
@@ -60,15 +40,7 @@ const resolveStatus = statusMsg => {
 const useProduct = useProductStore()
 
 await useProduct.fetchProduct()
-
-// optional map of categoryId to label
-const categoryMap = {
-  1: 'Electronics',
-  2: 'Shoes',
-  3: 'Accessories',
-
-  // extend as needed
-}
+await useProduct.fetchCategory()
 
 const { itemsPerPage, searchQuery, page, sortBy, orderBy } = storeToRefs(useProduct)
 
@@ -77,7 +49,7 @@ const products = computed(() =>
     id: product.id,
     productName: product.name,
     productBrand: '--', // static or dynamic if available
-    category: categoryMap[product.categoryId] || 'Uncategorized',
+    category: useProduct.category[product.categoryId],
     price: `$${parseFloat(product.price).toFixed(2)}`,
     qty: product.totalStock,
     status: product.totalStock > 0 ? 'Published' : 'Inactive',
@@ -85,7 +57,7 @@ const products = computed(() =>
   })),
 )
 
-
+console.log(useProduct.category[0])
 watch(
   [selectedStatus, selectedCategory, selectedStock, searchQuery, itemsPerPage, page],
   async () => {
@@ -176,17 +148,17 @@ const deleteProduct = async id => {
         <!-- category -->
         <template #item.category="{ item }">
           <VAvatar
-            size="30"
+            size="24"
             variant="tonal"
             :color="resolveCategory(item.category)?.color"
-            class="me-4"
+            class="me-2"
           >
-            <VIcon
-              :icon="resolveCategory(item.category)?.icon"
-              size="18"
+            <VImg
+              v-if="item.category.imageUrl"
+              :src="`${baseUrl}${item.category.imageUrl}`"
             />
           </VAvatar>
-          <span class="text-body-1 text-high-emphasis">{{ item.category }}</span>
+          <span class="text-body-1 text-high-emphasis">{{ item.category.name }}</span>
         </template>
 
         <!-- stock -->

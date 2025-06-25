@@ -18,6 +18,7 @@ export const useProductStore = defineStore('userProduct', () => {
   const product = ref([])
   const productData = ref()
   const category = ref([])
+  const categoryData = ref()
   const totalProduct = ref(0)
   const router = useRouter()
   const productName = ref('')
@@ -49,7 +50,6 @@ export const useProductStore = defineStore('userProduct', () => {
         inStock: selectedStock.value,
       },
     }))
-
     product.value = data.value?.data || []
     totalProduct.value = data.value?.pagination?.totalItems || 0
   }
@@ -88,8 +88,16 @@ export const useProductStore = defineStore('userProduct', () => {
     const { data } = await useApi(createUrl('category/get-all-categories', {
     }))
 
-    console.log(data)
     category.value = data.value?.categories || []
+  }
+
+  const fetchCategoryById = async id => {
+    const { data } = await useApi(createUrl(`category/get-category/${id}`, {
+    }))
+
+    categoryData.value = data.value?.category
+
+    return data.value?.category
   }
   
   const addCategory = async formData => {
@@ -99,6 +107,24 @@ export const useProductStore = defineStore('userProduct', () => {
       body: formData,
     })
 
+    await fetchCategory()
+  }
+
+  const updateCategory = async (formData, id) => {
+
+    await $api(`/category/update-category/${id}`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    await fetchCategory()
+  }
+
+  const deleteCategory = async id => {
+    await $api(`/category/delete-category/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
     await fetchCategory()
   }
 
@@ -189,5 +215,9 @@ export const useProductStore = defineStore('userProduct', () => {
     updateProduct,
     fetchProductById,
     productData,
+    updateCategory,
+    fetchCategoryById,
+    categoryData,
+    deleteCategory,
   }
 })

@@ -111,12 +111,6 @@ const submitProduct = async () => {
       </div>
 
       <div class="d-flex gap-4 align-center flex-wrap">
-        <VBtn
-          variant="tonal"
-          color="secondary"
-        >
-          Discard
-        </VBtn>
         <VBtn @click="submitProduct">
           {{ productId ? 'Update Product' : 'Publish Product' }}
         </VBtn>

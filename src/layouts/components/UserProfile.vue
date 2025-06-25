@@ -7,9 +7,9 @@ const ability = useAbility()
 
 // TODO: Get type from backend
 const userData = useCookie('userData')
-
 const logout = async () => {
-
+  console.log(userData)
+  return
   // Remove "accessToken" from cookie
   useCookie('accessToken').value = null
 
@@ -55,12 +55,12 @@ const userProfileList = [
     <VAvatar
       size="38"
       class="cursor-pointer"
-      :color="!(userData && userData.avatar) ? 'primary' : undefined"
-      :variant="!(userData && userData.avatar) ? 'tonal' : undefined"
+      :color="!(userData && userData.coverImage) ? 'primary' : undefined"
+      :variant="!(userData && userData.coverImage) ? 'tonal' : undefined"
     >
       <VImg
-        v-if="userData && userData.avatar"
-        :src="userData.avatar"
+        v-if="userData && userData.coverImage"
+        :src="`${baseUrl}${userData.coverImage}`"
       />
       <VIcon
         v-else
@@ -91,8 +91,8 @@ const userProfileList = [
                     :variant="!(userData && userData.avatar) ? 'tonal' : undefined"
                   >
                     <VImg
-                      v-if="userData && userData.avatar"
-                      :src="`${baseUrl}${userData.avatar}`"
+                      v-if="userData && userData.coverImage"
+                      :src="`${baseUrl}${userData.coverImage}`"
                     />
                     <VIcon
                       v-else
@@ -104,7 +104,7 @@ const userProfileList = [
 
               <div>
                 <h6 class="text-h6 font-weight-medium">
-                  {{ userData.fullName || userData.username }}
+                  {{ userData.name }}
                 </h6>
                 <VListItemSubtitle class="text-capitalize text-disabled">
                   {{ userData.role }}

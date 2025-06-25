@@ -80,7 +80,6 @@ export const useAuthStore = defineStore('userAuth', () => {
       const { data } = await useApi(createUrl(`/users/getProfile` ))
 
       useCookie('userData').value = data.value.filteredUser
-
       const userAbilityRules = [{
         'action': "manage",
         'subject': "all",

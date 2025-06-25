@@ -1,6 +1,8 @@
 <script setup>
+import { ref, watch, onMounted } from 'vue'
+import { useProductStore } from '@/plugins/store/product'
 import ECommerceAddCategoryDrawer from '@/views/apps/ecommerce/ECommerceAddCategoryDrawer.vue'
-import { useProductStore } from "@/plugins/store/product"
+import ECommerceEditCategoryDrawer from '@/views/apps/ecommerce/ECommerceEditCategoryDrawer.vue'
 
 const categoryData = ref([])
 const baseUrl = import.meta.env.VITE_BASE_IMG_URL
@@ -15,10 +17,6 @@ const headers = [
     key: 'name',
   },
   {
-    title: 'Description',
-    key: 'description',
-  },
-  {
     title: 'Actions',
     key: 'actions',
     sortable: false,
@@ -29,7 +27,21 @@ const itemsPerPage = ref(10)
 const page = ref(1)
 const searchQuery = ref('')
 const isAddProductDrawerOpen = ref(false)
+const isEditProductDrawerOpen = ref(false)
+const selectedCategory = ref(null) // For storing selected category data
 const useProduct = useProductStore()
+
+// Fetch categories on mount
+onMounted(async () => {
+  await useProduct.fetchCategory()
+  categoryData.value = useProduct.category
+})
+
+// Open the edit drawer and set selected category data
+const openEditCategoryDrawer = category => {
+  selectedCategory.value = category
+  isEditProductDrawerOpen.value = true
+}
 
 await useProduct.fetchCategory()
 categoryData.value = useProduct.category
@@ -93,10 +105,11 @@ categoryData.value = useProduct.category
             </div>
           </div>
         </template>
-        <template #item.actions>
-          <IconBtn>
+        <template #item.actions="{ item }">
+          <!-- Open the edit drawer with the selected category -->
+          <IconBtn @click="openEditCategoryDrawer(item.id)">
             <VIcon
-              icon="tabler-dots-vertical"
+              icon="tabler-pencil"
               size="22"
             />
           </IconBtn>
@@ -112,7 +125,12 @@ categoryData.value = useProduct.category
       </VDataTableServer>
     </VCard>
 
+    <!-- Pass the selected category data to the edit drawer -->
     <ECommerceAddCategoryDrawer v-model:is-drawer-open="isAddProductDrawerOpen" />
+    <ECommerceEditCategoryDrawer
+      v-model:is-drawer-open="isEditProductDrawerOpen"
+      :category-id="selectedCategory"
+    />
   </div>
 </template>
 

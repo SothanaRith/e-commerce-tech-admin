@@ -4,19 +4,20 @@ import { Link } from '@tiptap/extension-link'
 import { Placeholder } from '@tiptap/extension-placeholder'
 import { Underline } from '@tiptap/extension-underline'
 import { StarterKit } from '@tiptap/starter-kit'
-import {
-  EditorContent,
-  useEditor,
-} from '@tiptap/vue-3'
+import { EditorContent, useEditor } from '@tiptap/vue-3'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { VForm } from 'vuetify/components/VForm'
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useProductStore } from '@/plugins/store/product'
 
 const props = defineProps({
   isDrawerOpen: {
     type: Boolean,
     required: true,
+  },
+  categoryId: {  // Added categoryId to fetch the category for editing
+    type: String,
+    required: false,
   },
 })
 
@@ -37,19 +38,39 @@ const editor = useEditor({
   ],
 })
 
-const addImage = () => {
-  const url = prompt('Enter image URL')
-  if (url) {
-    editor?.chain().focus().setImage({ src: url }).run()
+// Variables to hold category data
+const categoryTitle = ref('')
+const categoryImg = ref(null)
+const categoryDescription = ref('')
+
+// Store reference to the form
+const refVForm = ref()
+const useProduct = useProductStore()
+
+// Fetch the category for editing when categoryId is provided
+const fetchCategoryData = async () => {
+  if (props.categoryId) {
+    const category = await useProduct.fetchCategoryById(props.categoryId)
+
+    categoryTitle.value = category.name
+    categoryDescription.value = category.description
+
+    // If the category has an image, assign it
+    if (category.imageUrl) {
+      categoryImg.value = category.imageUrl
+    }
   }
 }
 
-const refVForm = ref()
-const categoryTitle = ref('')
-const categoryImg = ref(null)
-const useProduct = useProductStore()
+// Watch for changes to categoryId and fetch new category data
+watch(() => props.categoryId, async newCategoryId => {
+  if (newCategoryId) {
+    await fetchCategoryData()
+  }
+}, { immediate: true })
 
-const addCategory = async () => {
+// Function to add or update category
+const submitCategory = async () => {
   const isValid = await refVForm.value?.validate()
   if (!isValid) return
 
@@ -59,16 +80,23 @@ const addCategory = async () => {
   formData.append('description', editor.value.getHTML())
   if (categoryImg.value) formData.append('image', categoryImg.value)
 
-  await useProduct.addCategory(formData)
+  if (props.categoryId) {
+    await useProduct.updateCategory(formData, props.categoryId)
+  }
 
   resetForm()
 }
 
 const resetForm = () => {
+  // Check if editor is initialized
+  if (editor.value) {
+    editor.value.commands.setContent('')
+  }
+
   emit('update:isDrawerOpen', false)
   categoryTitle.value = ''
   categoryImg.value = null
-  editor?.commands.setContent('')
+  categoryDescription.value = ''
   refVForm.value?.reset()
 }
 </script>
@@ -85,7 +113,7 @@ const resetForm = () => {
   >
     <!-- 👉 Header -->
     <AppDrawerHeaderSection
-      title="Add Category"
+      title="Edit Category"
       @cancel="$emit('update:isDrawerOpen', false)"
     />
 
@@ -129,9 +157,9 @@ const resetForm = () => {
                     type="submit"
                     color="primary"
                     class="me-4"
-                    @click="addCategory"
+                    @click="submitCategory"
                   >
-                    Add
+                    {{ props.categoryId ? 'Update' : 'Add' }} Category
                   </VBtn>
                   <VBtn
                     color="error"
