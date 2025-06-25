@@ -326,8 +326,8 @@ const updateOrderStatus = async (id, orderStatus) => {
             <div class="d-flex flex-column">
               <div class="text-body-1 font-weight-medium">
                 <RouterLink
-                  :to="{ name: 'pages-user-profile-tab', params: { tab: 'profile' } }"
-                  class="text-link"
+                  :to="{ name: 'apps-user-view-id', params: { id: item.User.id } }"
+                  class="font-weight-medium text-link"
                 >
                   {{ item.User.name }}
                 </RouterLink>

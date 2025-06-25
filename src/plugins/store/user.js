@@ -30,17 +30,18 @@ export const useUserStore = defineStore('userUser', () => {
   const fetchUserById = async userId => {
     try {
       const { data } = await useApi(`/users/getProfile/${userId}`)
-      const u = data.value
+
+      const u = data.value.filteredUser
 
       if (u) {
         userData.value = {
           id: u.id,
-          avatarImg: u.image,
+          avatarImg: u.coverImage,
           userName: u.name,
           email: u.email,
-          userStatus: u.activate,
-          team: u.team?.id ?? '',
-          roles: u.roles?.map(role => ({ id: role.id, name: role.name })) || [],
+          status: u.status,
+          role: u.role,
+          contact: u.phone,
         }
       }
     } catch (error) {
@@ -91,5 +92,6 @@ export const useUserStore = defineStore('userUser', () => {
     fetchUserById,
     editUser,
     editUserProfile,
+    userData,
   }
 })

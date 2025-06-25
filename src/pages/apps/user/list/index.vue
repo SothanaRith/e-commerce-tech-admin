@@ -1,18 +1,12 @@
 <script setup>
 import AddNewUserDrawer from '@/views/apps/user/list/AddNewUserDrawer.vue'
+import {useUserStore} from "@/plugins/store/user.js";
 
-// 👉 Store
-const searchQuery = ref('')
 const selectedRole = ref()
-const selectedPlan = ref()
 const selectedStatus = ref()
-
-// Data table options
-const itemsPerPage = ref(10)
-const page = ref(1)
-const sortBy = ref()
-const orderBy = ref()
+const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 const selectedRows = ref([])
+const useUser = useUserStore()
 
 const updateOptions = options => {
   sortBy.value = options.sortBy[0]?.key
@@ -30,14 +24,6 @@ const headers = [
     key: 'role',
   },
   {
-    title: 'Plan',
-    key: 'plan',
-  },
-  {
-    title: 'Billing',
-    key: 'billing',
-  },
-  {
     title: 'Status',
     key: 'status',
   },
@@ -48,24 +34,9 @@ const headers = [
   },
 ]
 
-const {
-  data: usersData,
-  execute: fetchUsers,
-} = await useApi(createUrl('/apps/users', {
-  query: {
-    q: searchQuery,
-    status: selectedStatus,
-    plan: selectedPlan,
-    role: selectedRole,
-    itemsPerPage,
-    page,
-    sortBy,
-    orderBy,
-  },
-}))
+const { itemsPerPage, searchQuery, page, sortBy, orderBy } = storeToRefs(useUser)
 
-const users = computed(() => usersData.value.users)
-const totalUsers = computed(() => usersData.value.totalUsers)
+await useUser.fetchUser()
 
 // 👉 search filters
 const roles = [
@@ -74,39 +45,8 @@ const roles = [
     value: 'admin',
   },
   {
-    title: 'Author',
-    value: 'author',
-  },
-  {
-    title: 'Editor',
-    value: 'editor',
-  },
-  {
-    title: 'Maintainer',
-    value: 'maintainer',
-  },
-  {
-    title: 'Subscriber',
-    value: 'subscriber',
-  },
-]
-
-const plans = [
-  {
-    title: 'Basic',
-    value: 'basic',
-  },
-  {
-    title: 'Company',
-    value: 'company',
-  },
-  {
-    title: 'Enterprise',
-    value: 'enterprise',
-  },
-  {
-    title: 'Team',
-    value: 'team',
+    title: 'Buyer',
+    value: 'buyer',
   },
 ]
 
@@ -169,30 +109,6 @@ const resolveUserStatusVariant = stat => {
     return 'secondary'
   
   return 'primary'
-}
-
-const isAddNewUserDrawerVisible = ref(false)
-
-const addNewUser = async userData => {
-  await $api('/apps/users', {
-    method: 'POST',
-    body: userData,
-  })
-
-  // Refetch User
-  fetchUsers()
-}
-
-const deleteUser = async id => {
-  await $api(`/apps/users/${ id }`, { method: 'DELETE' })
-
-  // Delete from selectedRows
-  const index = selectedRows.value.findIndex(row => row === id)
-  if (index !== -1)
-    selectedRows.value.splice(index, 1)
-
-  // Refetch User
-  fetchUsers()
 }
 
 const widgetData = ref([
@@ -306,19 +222,6 @@ const widgetData = ref([
               clear-icon="tabler-x"
             />
           </VCol>
-          <!-- 👉 Select Plan -->
-          <VCol
-            cols="12"
-            sm="4"
-          >
-            <AppSelect
-              v-model="selectedPlan"
-              placeholder="Select Plan"
-              :items="plans"
-              clearable
-              clear-icon="tabler-x"
-            />
-          </VCol>
           <!-- 👉 Select Status -->
           <VCol
             cols="12"
@@ -362,26 +265,8 @@ const widgetData = ref([
               placeholder="Search User"
             />
           </div>
-
-          <!-- 👉 Export button -->
-          <VBtn
-            variant="tonal"
-            color="secondary"
-            prepend-icon="tabler-upload"
-          >
-            Export
-          </VBtn>
-
-          <!-- 👉 Add user button -->
-          <VBtn
-            prepend-icon="tabler-plus"
-            @click="isAddNewUserDrawerVisible = true"
-          >
-            Add New User
-          </VBtn>
         </div>
       </VCardText>
-
       <VDivider />
 
       <!-- SECTION datatable -->
@@ -389,12 +274,11 @@ const widgetData = ref([
         v-model:items-per-page="itemsPerPage"
         v-model:model-value="selectedRows"
         v-model:page="page"
-        :items="users"
+        :items="useUser.user"
         item-value="id"
-        :items-length="totalUsers"
+        :items-length="useUser.totalUser"
         :headers="headers"
         class="text-no-wrap"
-        show-select
         @update:options="updateOptions"
       >
         <!-- User -->
@@ -402,14 +286,14 @@ const widgetData = ref([
           <div class="d-flex align-center gap-x-4">
             <VAvatar
               size="34"
-              :variant="!item.avatar ? 'tonal' : undefined"
-              :color="!item.avatar ? resolveUserRoleVariant(item.role).color : undefined"
+              :variant="!item.coverImage ? 'tonal' : undefined"
+              :color="!item.coverImage ? resolveUserRoleVariant(item.role).color : undefined"
             >
               <VImg
-                v-if="item.avatar"
-                :src="item.avatar"
+                v-if="item.coverImage"
+                :src="`${baseUrl}${item.coverImage}`"
               />
-              <span v-else>{{ avatarText(item.fullName) }}</span>
+              <span v-else>{{ avatarText(item.name) }}</span>
             </VAvatar>
             <div class="d-flex flex-column">
               <h6 class="text-base">
@@ -417,7 +301,7 @@ const widgetData = ref([
                   :to="{ name: 'apps-user-view-id', params: { id: item.id } }"
                   class="font-weight-medium text-link"
                 >
-                  {{ item.fullName }}
+                  {{ item.name }}
                 </RouterLink>
               </h6>
               <div class="text-sm">
@@ -442,13 +326,6 @@ const widgetData = ref([
           </div>
         </template>
 
-        <!-- Plan -->
-        <template #item.plan="{ item }">
-          <div class="text-body-1 text-high-emphasis text-capitalize">
-            {{ item.currentPlan }}
-          </div>
-        </template>
-
         <!-- Status -->
         <template #item.status="{ item }">
           <VChip
@@ -463,14 +340,6 @@ const widgetData = ref([
 
         <!-- Actions -->
         <template #item.actions="{ item }">
-          <IconBtn @click="deleteUser(item.id)">
-            <VIcon icon="tabler-trash" />
-          </IconBtn>
-
-          <IconBtn>
-            <VIcon icon="tabler-eye" />
-          </IconBtn>
-
           <VBtn
             icon
             variant="text"
@@ -493,13 +362,6 @@ const widgetData = ref([
                   </template>
                   <VListItemTitle>Edit</VListItemTitle>
                 </VListItem>
-
-                <VListItem @click="deleteUser(item.id)">
-                  <template #prepend>
-                    <VIcon icon="tabler-trash" />
-                  </template>
-                  <VListItemTitle>Delete</VListItemTitle>
-                </VListItem>
               </VList>
             </VMenu>
           </VBtn>
@@ -510,16 +372,11 @@ const widgetData = ref([
           <TablePagination
             v-model:page="page"
             :items-per-page="itemsPerPage"
-            :total-items="totalUsers"
+            :total-items="useUser.totalUser"
           />
         </template>
       </VDataTableServer>
       <!-- SECTION -->
     </VCard>
-    <!-- 👉 Add New User -->
-    <AddNewUserDrawer
-      v-model:is-drawer-open="isAddNewUserDrawerVisible"
-      @user-data="addNewUser"
-    />
   </section>
 </template>
