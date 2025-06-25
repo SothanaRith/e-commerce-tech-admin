@@ -59,4 +59,17 @@ export const routes = [
     name: 'apps-ecommerce-dashboard',
     component: () => import('@/pages/dashboards/ecommerce.vue'),
   },
+  {
+    path: '/apps/ecommerce/slide/list',
+    name: 'apps-ecommerce-slide-list',
+    component: () => import('@/pages/apps/ecommerce/slide/list/index.vue'),
+
+  },
+  {
+    path: '/apps/ecommerce/slide/add',
+    name: 'apps-ecommerce-slide-add',
+    component: () => import('@/pages/apps/ecommerce/slide/add/index.vue'),
+
+  },
+
 ]

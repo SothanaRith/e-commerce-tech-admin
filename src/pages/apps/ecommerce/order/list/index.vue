@@ -271,12 +271,6 @@ const updateOrderStatus = async (id, orderStatus) => {
               style="min-inline-size: 6.25rem;"
               :items="[5, 10, 20, 50, 100]"
             />
-            <VBtn
-              variant="tonal"
-              color="secondary"
-              prepend-icon="tabler-upload"
-              text="Export"
-            />
           </div>
         </div>
       </VCardText>

@@ -57,7 +57,6 @@ const products = computed(() =>
   })),
 )
 
-console.log(useProduct.category[0])
 watch(
   [selectedStatus, selectedCategory, selectedStock, searchQuery, itemsPerPage, page],
   async () => {
@@ -114,7 +113,6 @@ const deleteProduct = async id => {
         v-model:model-value="selectedRows"
         v-model:page="page"
         :headers="headers"
-        show-select
         :items="products"
         :items-length="totalProduct"
         class="text-no-wrap"
