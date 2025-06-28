@@ -1,12 +1,14 @@
 <script setup>
-import AddNewUserDrawer from '@/views/apps/user/list/AddNewUserDrawer.vue'
 import {useUserStore} from "@/plugins/store/user.js";
+import EditRoleDialog from "@/components/dialogs/EditRoleDialog.vue";
 
 const selectedRole = ref()
 const selectedStatus = ref()
 const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 const selectedRows = ref([])
+const isEditRoleDialogVisible = ref()
 const useUser = useUserStore()
+const selectedUserId = ref()
 
 const updateOptions = options => {
   sortBy.value = options.sortBy[0]?.key
@@ -97,6 +99,20 @@ const resolveUserRoleVariant = role => {
     color: 'primary',
     icon: 'tabler-user',
   }
+}
+
+const handleDialogSubmit = async data => {
+  try {
+    await useUser.editUser(selectedUserId.value, data)
+    isEditRoleDialogVisible.value = false
+  } catch (error) {
+    console.error('Failed to update role:', error)
+  }
+}
+
+const editRole = async id => {
+  selectedUserId.value = id
+  isEditRoleDialogVisible.value = true
 }
 
 const resolveUserStatusVariant = stat => {
@@ -267,8 +283,7 @@ const resolveUserStatusVariant = stat => {
 
                   <VListItemTitle>View</VListItemTitle>
                 </VListItem>
-
-                <VListItem link>
+                <VListItem @click="editRole(item.id)">
                   <template #prepend>
                     <VIcon icon="tabler-pencil" />
                   </template>
@@ -290,5 +305,10 @@ const resolveUserStatusVariant = stat => {
       </VDataTableServer>
       <!-- SECTION -->
     </VCard>
+
+    <EditRoleDialog
+      v-model:is-dialog-visible="isEditRoleDialogVisible"
+      @update:role-permissions="handleDialogSubmit"
+    />
   </section>
 </template>

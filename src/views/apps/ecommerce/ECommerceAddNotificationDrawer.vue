@@ -68,7 +68,6 @@ const addNotification = async () => {
 const resetForm = () => {
   emit('update:isDrawerOpen', false)
   notificationTitle.value = ''
-  editor?.commands.setContent('')
   refVForm.value?.reset()
 }
 </script>

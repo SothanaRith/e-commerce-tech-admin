@@ -45,6 +45,11 @@ const openEditCategoryDrawer = category => {
 
 await useProduct.fetchCategory()
 categoryData.value = useProduct.category
+
+watch([isEditProductDrawerOpen, isAddProductDrawerOpen], async () => {
+  await useProduct.fetchCategory()
+  categoryData.value = useProduct.category
+}, { immediate: true })
 </script>
 
 <template>
@@ -126,10 +131,14 @@ categoryData.value = useProduct.category
     </VCard>
 
     <!-- Pass the selected category data to the edit drawer -->
-    <ECommerceAddCategoryDrawer v-model:is-drawer-open="isAddProductDrawerOpen" />
+    <ECommerceAddCategoryDrawer
+      v-model:is-drawer-open="isAddProductDrawerOpen"
+      @update:is-drawer-open="val => isEditProductDrawerOpen = val"
+    />
     <ECommerceEditCategoryDrawer
       v-model:is-drawer-open="isEditProductDrawerOpen"
       :category-id="selectedCategory"
+      @update:is-drawer-open="val => isEditProductDrawerOpen = val"
     />
   </div>
 </template>

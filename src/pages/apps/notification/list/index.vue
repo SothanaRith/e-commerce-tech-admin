@@ -29,7 +29,10 @@ const loadNotifications = async () => {
 }
 
 onMounted(loadNotifications)
-watch([page, itemsPerPage], loadNotifications)
+watch([page, itemsPerPage, isAddProductDrawerOpen], loadNotifications)
+watch([isAddProductDrawerOpen], async () => {
+  await loadNotifications()
+}, { immediate: true })
 
 const deleteNotifications = async id => {
   await useNotification.deleteNotification(id)
@@ -42,7 +45,6 @@ const deleteNotifications = async id => {
     <VCard>
       <VCardText>
         <div class="d-flex justify-sm-space-between flex-wrap gap-y-4 gap-x-6 justify-start">
-
           <div class="d-flex align-center flex-wrap gap-4">
             <VBtn
               prepend-icon="tabler-plus"
@@ -109,7 +111,10 @@ const deleteNotifications = async id => {
     </VCard>
 
     <!-- Add/Edit Drawer Placeholder -->
-    <ECommerceAddNotificationDrawer v-model:is-drawer-open="isAddProductDrawerOpen" />
+    <ECommerceAddNotificationDrawer
+      v-model:is-drawer-open="isAddProductDrawerOpen"
+      @update:is-drawer-open="val => isAddProductDrawerOpen = val"
+    />
   </div>
 </template>
 
