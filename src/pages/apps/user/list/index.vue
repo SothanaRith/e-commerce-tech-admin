@@ -272,7 +272,7 @@ const resolveUserStatusVariant = stat => {
                   <template #prepend>
                     <VIcon icon="tabler-pencil" />
                   </template>
-                  <VListItemTitle>Edit</VListItemTitle>
+                  <VListItemTitle>Update Role</VListItemTitle>
                 </VListItem>
               </VList>
             </VMenu>

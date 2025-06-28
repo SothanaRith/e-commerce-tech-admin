@@ -24,4 +24,11 @@ export default [
       { title: 'List', to: 'apps-user-list' },
     ],
   },
+  {
+    title: 'Notification',
+    icon: { icon: 'tabler-notification' },
+    children: [
+      { title: 'List Global Notification', to: 'apps-notification-list', icon: { icon: 'tabler-notification' } },
+    ],
+  },
 ]
