@@ -11,11 +11,13 @@ export const redirects = [
       // TODO: Get type from backend
       const userData = useCookie('userData')
 
-      const userRole = userData.value.role
-      if (userRole === 'admin')
-        return { name: 'dashboards-ecommerce' }
-      if (userRole === 'client')
-        return { name: 'access-control' }
+      if (userData.value) {
+        const userRole = userData.value.role
+        if (userRole === 'admin')
+          return { name: 'dashboards-ecommerce' }
+        if (userRole === 'client')
+          return { name: 'access-control' }
+      }
       
       return { name: 'login', query: to.query }
     },
@@ -58,12 +60,6 @@ export const routes = [
     path: '/apps/ecommerce/dashboard',
     name: 'apps-ecommerce-dashboard',
     component: () => import('@/pages/dashboards/ecommerce.vue'),
-  },
-  {
-    path: '/apps/ecommerce/slide/list',
-    name: 'apps-ecommerce-slide-list',
-    component: () => import('@/pages/apps/ecommerce/slide/list/index.vue'),
-
   },
   {
     path: '/apps/ecommerce/slide/add',

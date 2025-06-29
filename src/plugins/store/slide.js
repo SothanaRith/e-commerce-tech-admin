@@ -11,6 +11,7 @@ export const useSlideStore = defineStore('userSlide', () => {
   const orderBy = ref()
   const selectedRows = ref([])
   const slideData = ref(null)
+  const router = useRouter()
 
   const fetchSlide = async () => {
     const { data } = await useApi(createUrl('/home/slides', {
