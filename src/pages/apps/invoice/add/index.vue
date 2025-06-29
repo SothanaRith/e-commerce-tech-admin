@@ -1,6 +1,5 @@
 <script setup>
 import InvoiceEditable from '@/views/apps/invoice/InvoiceEditable.vue'
-import InvoiceSendInvoiceDrawer from '@/views/apps/invoice/InvoiceSendInvoiceDrawer.vue'
 
 // 👉 Default Blank Data
 const invoiceData = ref({
