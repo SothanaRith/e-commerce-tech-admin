@@ -1,4 +1,3 @@
-import { icon } from "@/views/demos/components/badge/demoCodeBadge"
 
 export default [
   {

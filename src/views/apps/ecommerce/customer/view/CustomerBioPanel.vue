@@ -1,6 +1,4 @@
 <script setup>
-import rocketImg from '@images/eCommerce/rocket.png'
-
 const props = defineProps({
   customerData: {
     type: null,

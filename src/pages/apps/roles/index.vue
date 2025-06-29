@@ -1,5 +1,4 @@
 <script setup>
-import RoleCards from '@/views/apps/roles/RoleCards.vue'
 import UserList from '@/views/apps/roles/UserList.vue'
 </script>
 
@@ -14,10 +13,6 @@ import UserList from '@/views/apps/roles/UserList.vue'
       </p>
     </VCol>
 
-    <!-- 👉 Roles Cards -->
-    <VCol cols="12">
-      <RoleCards />
-    </VCol>
 
     <VCol cols="12">
       <h4 class="text-h4 mb-1 mt-6">
