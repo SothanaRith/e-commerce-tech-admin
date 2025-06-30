@@ -39,15 +39,15 @@ const clients = ref([
             {{ themeConfig.app.title }}
           </h6>
         </div>
-        <p class="text-high-emphasis mb-0">
-          Office 149, 450 South Brand Brooklyn
-        </p>
-        <p class="text-high-emphasis mb-0">
-          San Diego County, CA 91905, USA
-        </p>
-        <p class="text-high-emphasis mb-0">
-          +1 (123) 456 7891, +44 (876) 543 2198
-        </p>
+        <h6 class="text-h6 font-weight-regular">
+          Office 149, 450 South Borey New World Chhouk Va II
+        </h6>
+        <h6 class="text-h6 font-weight-regular">
+          Phnom Penh, Cambodia
+        </h6>
+        <h6 class="text-h6 font-weight-regular">
+          +855 123 651 87, +855 971 2929 192
+        </h6>
       </div>
 
       <!-- 👉 Right -->
