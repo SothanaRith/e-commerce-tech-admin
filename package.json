@@ -32,6 +32,9 @@
     "cookie-es": "1.2.2",
     "destr": "2.0.3",
     "eslint-plugin-regexp": "2.7.0",
+    "file-saver": "^2.0.5",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "jwt-decode": "4.0.0",
     "mapbox-gl": "3.5.2",
     "ofetch": "1.4.1",
@@ -51,7 +54,8 @@
     "vue3-apexcharts": "1.8.0",
     "vue3-perfect-scrollbar": "2.0.0",
     "vuetify": "3.7.5",
-    "webfontloader": "1.6.28"
+    "webfontloader": "1.6.28",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@antfu/eslint-config-vue": "0.43.1",
