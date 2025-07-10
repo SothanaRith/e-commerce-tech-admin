@@ -82,9 +82,8 @@ const printInvoice = () => {
           <VRow class="print-row mb-6">
             <VCol class="text-no-wrap">
               <h6 class="text-h6 mb-4">
-                Invoice To:
+                Invoice To: {{ orderData.User?.name }}
               </h6>
-              <p>{{ orderData.User?.name }}</p>
               <p>{{ orderData.User?.email }}</p>
               <p>{{ orderData.address?.street }}, {{ orderData.address?.country }}</p>
               <p>{{ orderData.address?.phoneNumber }}</p>
@@ -106,11 +105,6 @@ const printInvoice = () => {
                       Bank Name:
                     </td><td>{{ orderData.paymentMethod || 'ABA Bank' }}</td>
                   </tr>
-                  <tr>
-                    <td class="pe-4">
-                      Country:
-                    </td><td>{{ orderData.address?.country }}</td>
-                  </tr>
                 </tbody>
               </table>
             </VCol>
@@ -119,7 +113,7 @@ const printInvoice = () => {
           <VTable class="invoice-preview-table border text-high-emphasis overflow-hidden mb-6">
             <thead>
               <tr>
-                <th>ITEM</th><th>DESCRIPTION</th><th class="text-center">
+                <th>ITEM</th><th class="text-center">
                   HOURS
                 </th><th class="text-center">
                   QTY
@@ -134,7 +128,6 @@ const printInvoice = () => {
                 :key="item.name"
               >
                 <td>{{ item.name }}</td>
-                <td>{{ item.description }}</td>
                 <td class="text-center">
                   {{ item.hours }}
                 </td>
@@ -154,7 +147,7 @@ const printInvoice = () => {
                 <h6 class="text-h6 me-2">
                   Salesperson:
                 </h6>
-                <span>{{ orderData.salesperson || 'N/A' }}</span>
+                <span>Snap Buy</span>
               </div>
               <p>Thanks for your business</p>
             </div>
