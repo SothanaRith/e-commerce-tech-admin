@@ -1,6 +1,10 @@
 <script setup>
 import { useOrderStore } from "@/plugins/store/order"
 import { computed, watch } from "vue"
+import * as XLSX from "xlsx"
+import { saveAs } from "file-saver"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 
 const props = defineProps({
   statusType: {
@@ -12,6 +16,49 @@ const props = defineProps({
     default: true,
   },
 })
+
+const exportToExcel = () => {
+  const rows = currentOrderData.value.map(order => ({
+    Order: `#${order.id}`,
+    Date: new Date(order.updatedAt).toLocaleDateString(),
+    Customer: order.User.name,
+    Email: order.User.email,
+    Payment: order.paymentType,
+    Status: order.Transaction?.status || "N/A",
+    Method: order.billingNumber,
+  }))
+
+  const worksheet = XLSX.utils.json_to_sheet(rows)
+  const workbook = XLSX.utils.book_new()
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Orders")
+
+  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" })
+  const blob = new Blob([excelBuffer], { type: "application/octet-stream" })
+
+  saveAs(blob, "orders.xlsx")
+}
+
+const exportToPDF = () => {
+  const doc = new jsPDF()
+
+  const rows = currentOrderData.value.map(order => ([
+    `#${order.id}`,
+    new Date(order.updatedAt).toLocaleDateString(),
+    order.User.name,
+    order.User.email,
+    order.paymentType,
+    order.Transaction?.status || "N/A",
+    order.billingNumber,
+  ]))
+
+  autoTable(doc, {
+    head: [["Order", "Date", "Customer", "Email", "Payment", "Status", "Method"]],
+    body: rows,
+  })
+
+  doc.save("orders.pdf")
+}
 
 const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 
@@ -275,6 +322,18 @@ const updateOrderStatus = async (id, orderStatus) => {
           />
 
           <div class="d-flex gap-x-4 align-center">
+            <VBtn
+              color="primary"
+              @click="exportToExcel"
+            >
+              Export to Excel
+            </VBtn>
+            <VBtn
+              color="error"
+              @click="exportToPDF"
+            >
+              Export to PDF
+            </VBtn>
             <div v-if="props.statusChangeDisabled">
               <AppSelect
                 v-model="status"

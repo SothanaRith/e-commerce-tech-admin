@@ -7,6 +7,7 @@ export default [
     children: [
       { title: 'List', to: 'apps-ecommerce-product-list', icon: { icon: 'tabler-list' } },
       { title: 'Category', to: 'apps-ecommerce-product-category-list', icon: { icon: 'tabler-tag' } },
+      { title: 'List slide', to: 'apps-ecommerce-slide-list', icon: { icon: 'tabler-tag' } },
     ],
   },
   {
@@ -20,6 +21,13 @@ export default [
     icon: { icon: 'tabler-user' },
     children: [
       { title: 'List', to: 'apps-user-list' },
+    ],
+  },
+  {
+    title: 'Notification',
+    icon: { icon: 'tabler-notification' },
+    children: [
+      { title: 'List Global Notification', to: 'apps-notification-list', icon: { icon: 'tabler-notification' } },
     ],
   },
 ]
