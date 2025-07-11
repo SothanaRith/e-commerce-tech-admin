@@ -49,7 +49,7 @@ const products = computed(() =>
     id: product.id,
     productName: product.name,
     productBrand: '--', // static or dynamic if available
-    category: useProduct.category[product.categoryId],
+    category: useProduct.category[product.categoryId - 1],
     price: `$${parseFloat(product.price).toFixed(2)}`,
     qty: product.totalStock,
     status: product.totalStock > 0 ? 'Published' : 'Inactive',
@@ -152,11 +152,11 @@ const deleteProduct = async id => {
             class="me-2"
           >
             <VImg
-              v-if="item.category.imageUrl"
-              :src="`${baseUrl}${item.category.imageUrl}`"
+              v-if="item.category?.imageUrl ?? ''"
+              :src="`${baseUrl}${item.category.imageUrl ?? ''}`"
             />
           </VAvatar>
-          <span class="text-body-1 text-high-emphasis">{{ item.category.name }}</span>
+          <span class="text-body-1 text-high-emphasis">{{ item.category?.name ?? "" }}</span>
         </template>
 
         <!-- stock -->

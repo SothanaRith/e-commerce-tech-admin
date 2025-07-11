@@ -183,7 +183,6 @@ export const useProductStore = defineStore('userProduct', () => {
 
       // Optional: refetch product list to reflect the updated stock
       await fetchProduct()
-
       return data.value
     } catch (error) {
       console.error('Failed to update total stock:', error)

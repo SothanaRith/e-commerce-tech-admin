@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useProductStore } from "@/plugins/store/product"
-import AppSelect from "@core/components/app-form-elements/AppSelect.vue";
+import AppSelect from "@core/components/app-form-elements/AppSelect.vue"
 
 const useProduct = useProductStore()
 
@@ -18,7 +18,7 @@ const variantAttributes = ref([
 
 const uploadedFiles = ref([])
 const relatedProducts = ref([])
-const productCategory = ref([])
+const productCategory = ref(0)
 const productPrice = ref()
 const productSKU = ref()
 const productStock = ref()
@@ -67,6 +67,7 @@ const addProduct = async () => {
   formData.append('relatedProductIds', JSON.stringify(relatedProducts.value))
 
   await useProduct.addProduct(formData)
+  window.location.reload()
   isLoading.value = false
 }
 </script>
@@ -84,12 +85,6 @@ const addProduct = async () => {
       </div>
 
       <div class="d-flex gap-4 align-center flex-wrap">
-        <VBtn
-          variant="tonal"
-          color="secondary"
-        >
-          Discard
-        </VBtn>
         <VBtn @click="addProduct">
           Publish Product
         </VBtn>
@@ -223,7 +218,6 @@ const addProduct = async () => {
                     v-model="productCategory"
                     item-title="title"
                     item-value="value"
-                    multiple
                     chips
                     placeholder="Select Category"
                     :items="useProduct.category.map(p => ({ title: p.name, value: p.id }))"

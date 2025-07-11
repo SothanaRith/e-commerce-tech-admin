@@ -5,7 +5,6 @@ import { useRoute, useRouter } from 'vue-router'
 
 const useProduct = useProductStore()
 const route = useRoute()
-const router = useRouter()
 const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 
 const productId = ref(route.params.id || null)
