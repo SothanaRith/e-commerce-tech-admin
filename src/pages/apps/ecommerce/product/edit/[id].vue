@@ -37,6 +37,7 @@ onMounted(async () => {
     productStock.value = product.Variants?.[0]?.stock || 0
     productSKU.value = product.Variants?.[0]?.sku || ''
     variantsProduct.value = product.Variants?.[0]?.id || ''
+    variantAttributes.value = product.Variants?.[0]?.VariantAttributes
     productCategory.value = product.categoryId
     for (const item of product.RelatedProducts) {
       relatedProducts.value.push(item.id)
