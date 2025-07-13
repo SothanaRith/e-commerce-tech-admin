@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useProductStore } from "@/plugins/store/product"
 import { useRoute, useRouter } from 'vue-router'
 
@@ -15,10 +15,11 @@ const productCategory = ref([])
 const productPrice = ref()
 const productSKU = ref()
 const productStock = ref()
-const variantsProduct = ref()
-const productDescription = ref()
-const productName = ref()
+const variantsProduct = ref([])
+const productDescription = ref('')
+const productName = ref('')
 const isLoading = ref(false)
+
 const variantAttributes = ref([
   { name: 'Color', value: 'Black' },
   { name: 'Size', value: 'M' },
@@ -36,8 +37,8 @@ onMounted(async () => {
     productPrice.value = product.price
     productStock.value = product.Variants?.[0]?.stock || 0
     productSKU.value = product.Variants?.[0]?.sku || ''
-    variantsProduct.value = product.Variants?.[0]?.id || ''
-    variantAttributes.value = product.Variants?.[0]?.VariantAttributes
+    variantsProduct.value = product.Variants || []
+    variantAttributes.value = product.Variants?.[0]?.VariantAttributes || []
     productCategory.value = product.categoryId
     for (const item of product.RelatedProducts) {
       relatedProducts.value.push(item.id)
@@ -53,6 +54,15 @@ const removeImage = index => {
   existingImages.value.splice(index, 1)  // Removes the image from the array at the specified index
 }
 
+const removeVariant = index => {
+  variantsProduct.value.splice(index, 1)
+}
+
+const removeAttribute = (variantIndex, attributeIndex) => {
+  variantsProduct.value[variantIndex].VariantAttributes.splice(attributeIndex, 1)
+}
+
+// Generate SKU based on product name
 const generateSKU = (prefix = 'SKU') => {
   const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase()
   const timestampPart = Date.now().toString().slice(-4)
@@ -65,6 +75,19 @@ watch(productName, newVal => {
     generateSKU(newVal.slice(0, 5).toUpperCase())
   }
 })
+
+const addVariant = () => {
+  // Add a new variant with default values
+  const newVariant = {
+    sku: '',
+    price: '',
+    stock: '',
+    imageUrl: '',
+    VariantAttributes: [{ name: '', value: '' }],  // Start with one empty attribute
+  }
+
+  variantsProduct.value.push(newVariant)
+}
 
 const submitProduct = async () => {
   isLoading.value = true
@@ -82,18 +105,22 @@ const submitProduct = async () => {
   formData.append('name', productName.value)
   formData.append('description', productDescription.value)
   formData.append('price', productPrice.value)
-  formData.append('variants[0][id]', variantsProduct.value)
-  formData.append('variants[0][stock]', productStock.value)
-  formData.append('stock', productStock.value)
-  formData.append('variants[0][sku]', productSKU.value)
-  formData.append('variants[0][price]', productPrice.value)
-  formData.append('relatedProductIds', JSON.stringify(relatedProducts.value))
 
-  // 🔁 Dynamically append variant attributes
-  variantAttributes.value.forEach((attr, index) => {
-    formData.append(`variants[0][attributes][${index}][name]`, attr.name)
-    formData.append(`variants[0][attributes][${index}][value]`, attr.value)
+  variantsProduct.value.forEach((variant, index) => {
+    formData.append(`variants[${index}][id]`, variant.id)
+    formData.append(`variants[${index}][stock]`, variant.stock)
+    formData.append(`variants[${index}][sku]`, variant.sku)
+    formData.append(`variants[${index}][price]`, variant.price)
+    formData.append(`variants[${index}][imageUrl]`, variant.imageUrl)
+
+    // 🔁 Dynamically append variant attributes
+    variant.VariantAttributes.forEach((attr, attrIndex) => {
+      formData.append(`variants[${index}][attributes][${attrIndex}][name]`, attr.name)
+      formData.append(`variants[${index}][attributes][${attrIndex}][value]`, attr.value)
+    })
   })
+
+  formData.append('relatedProductIds', JSON.stringify(relatedProducts.value))
 
   if (productId.value) {
     // Update product if productId exists
@@ -206,41 +233,110 @@ const submitProduct = async () => {
           </VCardText>
         </VCard>
 
-        <VCard
-          title="Variant Attributes"
-          class="mb-6"
-        >
-          <VCardText>
-            <VRow
-              v-for="(attr, index) in variantAttributes"
-              :key="index"
-              class="mb-2"
-            >
-              <VCol cols="6">
-                <AppTextField
-                  v-model="attr.name"
-                  label="Attribute Name"
-                  placeholder="e.g. Color"
-                />
-              </VCol>
-              <VCol cols="6">
-                <AppTextField
-                  v-model="attr.value"
-                  label="Attribute Value"
-                  placeholder="e.g. Red"
-                />
-              </VCol>
-            </VRow>
+        <!-- ✅ Variant Attributes as Cards -->
+        <div>
+          <br>
+          <div v-if="variantsProduct.length > 0" class="text-sm font-weight-medium mb-2">
+            Variants
+          </div>
 
-            <VBtn
-              color="primary"
-              size="small"
-              @click="variantAttributes.push({ name: '', value: '' })"
+          <VRow>
+            <VCol
+              v-for="(variant, index) in variantsProduct"
+              :key="index"
+              cols="12"
+              sm="6"
             >
-              Add Attribute
-            </VBtn>
-          </VCardText>
-        </VCard>
+              <VCard class="mb-4">
+                <VCardTitle class="text-h6">
+                  Variant {{ index + 1 }}
+                </VCardTitle>
+                <VCardText>
+                  <div class="d-flex flex-column gap-2">
+                    <AppTextField
+                      v-model="variant.sku"
+                      label="SKU"
+                      placeholder="SKU"
+                      style="width: 100%"
+                    />
+                    <AppTextField
+                      v-model="variant.price"
+                      label="Price"
+                      placeholder="Price"
+                      style="width: 100%"
+                    />
+                    <AppTextField
+                      v-model="variant.stock"
+                      label="Stock"
+                      placeholder="Stock"
+                      style="width: 100%"
+                    />
+                    <AppTextField
+                      v-model="variant.imageUrl"
+                      label="Image URL"
+                      placeholder="Image URL"
+                      style="width: 100%"
+                    />
+                  </div>
+                  <!-- Variant Attributes -->
+                  <div
+                    v-for="(attr, i) in variant.VariantAttributes"
+                    :key="i"
+                    class="d-flex gap-4 align-center justify-center"
+                  >
+                    <AppTextField
+                      v-model="attr.name"
+                      label="Attribute Name"
+                      placeholder="e.g. Color"
+                      style="width: 100%"
+                    />
+                    <AppTextField
+                      v-model="attr.value"
+                      label="Attribute Value"
+                      placeholder="e.g. Red"
+                      style="width: 100%"
+                    />
+                    <VBtn
+                      icon
+                      size="small"
+                      color="error"
+                      class="mt-4"
+                      @click="removeAttribute(index, i)"
+                    >
+                      <VIcon icon="tabler-x" />
+                    </VBtn>
+                  </div>
+                  <br>
+                  <VBtn
+                    color="primary"
+                    size="small"
+                    @click="variant.VariantAttributes.push({ name: '', value: '' })"
+                  >
+                    Add Attribute
+                  </VBtn>
+                </VCardText>
+              </VCard>
+            </VCol>
+          </VRow>
+
+          <VBtn
+            variant="tonal"
+            color="primary"
+            class="me-2"
+            size="small"
+            @click="addVariant"
+          >
+            + Add Variant
+          </VBtn>
+
+          <VBtn
+            color="error"
+            size="small"
+            @click="removeVariant(index)"
+          >
+            Remove Variant
+          </VBtn>
+        </div>
       </VCol>
 
       <VCol
