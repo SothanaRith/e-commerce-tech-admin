@@ -63,23 +63,30 @@ const removeAttribute = (variantIndex, attributeIndex) => {
 }
 
 // Generate SKU based on product name
-const generateSKU = (prefix = 'SKU') => {
+const generateSKU = (variantName = 'SKU', prefix = 'SKU') => {
   const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase()
   const timestampPart = Date.now().toString().slice(-4)
 
-  productSKU.value = `${prefix}-${randomPart}-${timestampPart}`
+  return `${prefix}-${variantName.slice(0, 3).toUpperCase()}-${randomPart}-${timestampPart}`
 }
 
+// Watch product name and update SKUs for all variants
 watch(productName, newVal => {
-  if (newVal && newVal.length > 3 && !productId.value) {
-    generateSKU(newVal.slice(0, 5).toUpperCase())
+  if (newVal && newVal.length > 3) {
+    variantsProduct.value.forEach((variant, index) => {
+      // ✅ Only generate SKU if it's missing or empty
+      if (!variant.sku) {
+        variant.sku = generateSKU(newVal)
+      }
+    })
   }
 })
 
 const addVariant = () => {
   // Add a new variant with default values
   const newVariant = {
-    sku: '',
+    sku: generateSKU(productName.value),
+    title: '',
     price: '',
     stock: '',
     imageUrl: '',
@@ -88,6 +95,23 @@ const addVariant = () => {
 
   variantsProduct.value.push(newVariant)
 }
+
+const handleVariantDrop = (event, index) => {
+  const file = event.dataTransfer.files[0]
+  if (file) {
+    variantsProduct.value[index].imageUrl = file
+    variantsProduct.value[index].previewUrl = URL.createObjectURL(file)
+  }
+}
+
+const handleImageUpload = (event, index) => {
+  const file = event.target.files[0]
+  if (file) {
+    variantsProduct.value[index].imageUrl = file
+    variantsProduct.value[index].previewUrl = URL.createObjectURL(file)
+  }
+}
+
 
 const submitProduct = async () => {
   isLoading.value = true
@@ -106,19 +130,40 @@ const submitProduct = async () => {
   formData.append('description', productDescription.value)
   formData.append('price', productPrice.value)
 
-  variantsProduct.value.forEach((variant, index) => {
-    formData.append(`variants[${index}][id]`, variant.id)
-    formData.append(`variants[${index}][stock]`, variant.stock)
-    formData.append(`variants[${index}][sku]`, variant.sku)
-    formData.append(`variants[${index}][price]`, variant.price)
-    formData.append(`variants[${index}][imageUrl]`, variant.imageUrl)
+  for (let i = 0; i < variantsProduct.value.length; i++) {
+    const variant = variantsProduct.value[i]
 
-    // 🔁 Dynamically append variant attributes
-    variant.VariantAttributes.forEach((attr, attrIndex) => {
-      formData.append(`variants[${index}][attributes][${attrIndex}][name]`, attr.name)
-      formData.append(`variants[${index}][attributes][${attrIndex}][value]`, attr.value)
-    })
-  })
+    const variantFormData = new FormData()
+
+    const plainAttrs = variant.VariantAttributes?.map(attr => ({
+      name: attr.name,
+      value: attr.value,
+    })) || []
+
+    variantFormData.append('sku', variant.sku)
+    variantFormData.append('title', variant.title)
+    variantFormData.append('price', variant.price)
+    variantFormData.append('stock', variant.stock)
+    variantFormData.append('attributes', JSON.stringify(plainAttrs))
+
+    if (variant.imageUrl instanceof File) {
+      variantFormData.append('image', variant.imageUrl)
+    }
+
+    try {
+      if (variant.id) {
+        await useProduct.updateVariant(variant.id, variantFormData)
+      } else {
+        await useProduct.createVariant(productId.value, variantFormData)
+      }
+    } catch (error) {
+      console.error('Error handling variant:', error)
+      isLoading.value = false
+      
+      return
+    }
+
+  }
 
   formData.append('relatedProductIds', JSON.stringify(relatedProducts.value))
 
@@ -166,14 +211,6 @@ const submitProduct = async () => {
                   placeholder="iPhone 14"
                 />
               </VCol>
-              <VCol cols="12">
-                <AppTextField
-                  v-model="productSKU"
-                  label="Product SKU"
-                  readonly="true"
-                  placeholder="iPhone 14"
-                />
-              </VCol>
               <VCol>
                 <span class="mb-1">Description (optional)</span>
                 <ProductDescriptionEditor
@@ -191,9 +228,6 @@ const submitProduct = async () => {
           <VCardItem>
             <template #title>
               Product Image
-            </template>
-            <template #append>
-              <span class="text-primary font-weight-medium text-sm cursor-pointer">Add Media from URL</span>
             </template>
           </VCardItem>
           <VCardText>
@@ -218,6 +252,7 @@ const submitProduct = async () => {
                     <VBtn
                       variant="outlined"
                       color="error"
+                      class="mt-2"
                       small
                       @click="removeImage(index)"
                     >
@@ -227,6 +262,7 @@ const submitProduct = async () => {
                 </VCol>
               </VRow>
             </div>
+            <br>
 
             <!-- DropZone for new image uploads -->
             <DropZone @update:files="val => uploadedFiles.value = val" />
@@ -234,130 +270,143 @@ const submitProduct = async () => {
         </VCard>
 
         <!-- ✅ Variant Attributes as Cards -->
-        <div>
-          <br>
-          <div v-if="variantsProduct.length > 0" class="text-sm font-weight-medium mb-2">
-            Variants
-          </div>
+        <VCard
+          class="mb-6"
+          title="Variants"
+        >
+          <VCardText>
+            <VRow>
+              <VCol
+                v-for="(variant, index) in variantsProduct"
+                :key="index"
+                cols="12"
+                sm="6"
+              >
+                <VCard class="mb-4">
+                  <VCardTitle class="text-h6">
+                    Variant {{ index + 1 }}
+                  </VCardTitle>
+                  <VCardText>
+                    <div class="d-flex flex-column gap-2">
+                      <AppTextField
+                        v-model="variant.sku"
+                        label="SKU"
+                        readonly="true"
+                        placeholder="SKU"
+                        style="width: 100%"
+                      />
+                      <AppTextField
+                        v-model="variant.title"
+                        label="Title"
+                        placeholder="Variant Title (e.g. Black 128GB)"
+                        style="width: 100%"
+                      />
+                      <AppTextField
+                        v-model="variant.price"
+                        label="Price"
+                        placeholder="Price"
+                        style="width: 100%"
+                      />
+                      <AppTextField
+                        v-model="variant.stock"
+                        label="Stock"
+                        placeholder="Stock"
+                        style="width: 100%"
+                      />
+                      <div
+                        class="drop-zone mt-4"
+                        @dragover.prevent
+                        @drop.prevent="e => handleVariantDrop(e, index)"
+                      >
+                        <p class="text-center text-caption">Drag & drop or click to upload</p>
+                        <input
+                          type="file"
+                          class="hidden-input"
+                          accept="image/*"
+                          @change="e => handleImageUpload(e, index)"
+                        />
+                      </div>
 
-          <VRow>
-            <VCol
-              v-for="(variant, index) in variantsProduct"
-              :key="index"
-              cols="12"
-              sm="6"
-            >
-              <VCard class="mb-4">
-                <VCardTitle class="text-h6">
-                  Variant {{ index + 1 }}
-                </VCardTitle>
-                <VCardText>
-                  <div class="d-flex flex-column gap-2">
-                    <AppTextField
-                      v-model="variant.sku"
-                      label="SKU"
-                      placeholder="SKU"
-                      style="width: 100%"
-                    />
-                    <AppTextField
-                      v-model="variant.price"
-                      label="Price"
-                      placeholder="Price"
-                      style="width: 100%"
-                    />
-                    <AppTextField
-                      v-model="variant.stock"
-                      label="Stock"
-                      placeholder="Stock"
-                      style="width: 100%"
-                    />
-                    <AppTextField
-                      v-model="variant.imageUrl"
-                      label="Image URL"
-                      placeholder="Image URL"
-                      style="width: 100%"
-                    />
-                  </div>
-                  <!-- Variant Attributes -->
-                  <div
-                    v-for="(attr, i) in variant.VariantAttributes"
-                    :key="i"
-                    class="d-flex gap-4 align-center justify-center"
-                  >
-                    <AppTextField
-                      v-model="attr.name"
-                      label="Attribute Name"
-                      placeholder="e.g. Color"
-                      style="width: 100%"
-                    />
-                    <AppTextField
-                      v-model="attr.value"
-                      label="Attribute Value"
-                      placeholder="e.g. Red"
-                      style="width: 100%"
-                    />
-                    <VBtn
-                      icon
-                      size="small"
-                      color="error"
-                      class="mt-4"
-                      @click="removeAttribute(index, i)"
+                      <!-- ✅ Preview -->
+                      <div v-if="variant.previewUrl || (typeof variant.imageUrl === 'string')">
+                        <VImg
+                          :src="variant.previewUrl || `${baseUrl}${variant.imageUrl}`"
+                          alt="Variant Image"
+                          class="my-4"
+                          max-width="120"
+                          max-height="120"
+                        />
+                      </div>
+                      <!-- Display the uploaded image preview -->
+                    </div>
+                    <!-- Variant Attributes -->
+                    <div
+                      v-for="(attr, i) in variant.VariantAttributes"
+                      :key="i"
+                      class="d-flex gap-4 align-center justify-center mt-4"
                     >
-                      <VIcon icon="tabler-x" />
+                      <AppTextField
+                        v-model="attr.name"
+                        label="Attribute Name"
+                        placeholder="e.g. Color"
+                        style="width: 100%"
+                      />
+                      <AppTextField
+                        v-model="attr.value"
+                        label="Attribute Value"
+                        placeholder="e.g. Red"
+                        style="width: 100%"
+                      />
+                      <VBtn
+                        icon
+                        size="small"
+                        color="error"
+                        class="mt-4"
+                        @click="removeAttribute(index, i)"
+                      >
+                        <VIcon icon="tabler-x" />
+                      </VBtn>
+                    </div>
+                    <br>
+                    <VBtn
+                      color="primary"
+                      size="small"
+                      @click="variant.VariantAttributes.push({ name: '', value: '' })"
+                    >
+                      Add Attribute
                     </VBtn>
-                  </div>
-                  <br>
-                  <VBtn
-                    color="primary"
-                    size="small"
-                    @click="variant.VariantAttributes.push({ name: '', value: '' })"
-                  >
-                    Add Attribute
-                  </VBtn>
-                </VCardText>
-              </VCard>
-            </VCol>
-          </VRow>
-
-          <VBtn
-            variant="tonal"
-            color="primary"
-            class="me-2"
-            size="small"
-            @click="addVariant"
-          >
-            + Add Variant
-          </VBtn>
-
-          <VBtn
-            color="error"
-            size="small"
-            @click="removeVariant(index)"
-          >
-            Remove Variant
-          </VBtn>
-        </div>
+                  </VCardText>
+                </VCard>
+              </VCol>
+            </VRow>
+            <div class="d-flex">
+              <VBtn
+                variant="tonal"
+                color="primary"
+                class="me-2"
+                size="small"
+                @click="addVariant"
+              >
+                + Add Variant
+              </VBtn>
+              <div v-if="variantsProduct.length > 0">
+                <VBtn
+                  color="error"
+                  size="small"
+                  @click="removeVariant(index)"
+                >
+                  Remove Variant
+                </VBtn>
+              </div>
+            </div>
+          </VCardText>
+        </VCard>
       </VCol>
 
       <VCol
         md="4"
         cols="12"
       >
-        <!-- 👉 Pricing -->
-        <VCard
-          title="Pricing"
-          class="mb-6"
-        >
-          <VCardText>
-            <AppTextField
-              v-model="productPrice"
-              label="Best Price"
-              placeholder="Price"
-              class="mb-6"
-            />
-          </VCardText>
-        </VCard>
-
         <!-- 👉 Organize -->
         <VCard title="Organize">
           <VCardText>
@@ -394,11 +443,6 @@ const submitProduct = async () => {
                 multiple
                 chips
               />
-              <AppTextField
-                v-model="productStock"
-                label="Add to Stock"
-                placeholder="Quantity"
-              />
             </div>
           </VCardText>
         </VCard>
@@ -407,11 +451,24 @@ const submitProduct = async () => {
   </div>
 </template>
 
-<style lang="scss" scoped>
-  .drop-zone {
-    border: 2px dashed rgba(var(--v-theme-on-surface), 0.12);
-    border-radius: 6px;
-  }
+<style scoped>
+.drop-zone {
+  border: 2px dashed #ccc;
+  padding: 16px;
+  text-align: center;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #f9f9f9;
+}
+
+.drop-zone:hover {
+  background-color: #f0f0f0;
+}
+
+.hidden-input {
+  display: block;
+  margin: 10px auto;
+}
 </style>
 
 <style lang="scss">

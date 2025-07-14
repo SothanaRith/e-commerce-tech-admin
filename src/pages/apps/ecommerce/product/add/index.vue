@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useProductStore } from "@/plugins/store/product"
 import AppSelect from "@core/components/app-form-elements/AppSelect.vue"
 
@@ -10,34 +10,12 @@ onMounted(async () => {
   await useProduct.fetchCategory()
 })
 
-const variantAttributes = ref([
-  { name: 'Color', value: 'Black' },
-  { name: 'Size', value: 'M' },
-])
-
-
 const uploadedFiles = ref([])
 const relatedProducts = ref([])
-const productCategory = ref(0)
-const productPrice = ref()
-const productSKU = ref()
-const productStock = ref()
-const productDescription = ref()
-const productName = ref()
-const isLoading = ref()
-
-const generateSKU = (prefix = 'SKU') => {
-  const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase()
-  const timestampPart = Date.now().toString().slice(-4)
-
-  productSKU.value = `${prefix}-${randomPart}-${timestampPart}`
-}
-
-watch(productName, newVal => {
-  if (newVal && newVal.length > 3) {
-    generateSKU(newVal.slice(0, 5).toUpperCase())
-  }
-})
+const productCategory = ref()
+const productDescription = ref('')
+const productName = ref('')
+const isLoading = ref(false)
 
 const addProduct = async () => {
   isLoading.value = true
@@ -53,16 +31,6 @@ const addProduct = async () => {
   formData.append('categoryId', productCategory.value ?? '1')
   formData.append('name', productName.value)
   formData.append('description', productDescription.value)
-  formData.append('price', productPrice.value)
-
-  // Correct variant formatting
-  formData.append('variants[0][stock]', productStock.value)
-  formData.append('variants[0][sku]', productSKU.value)
-  formData.append('variants[0][price]', productPrice.value)
-  variantAttributes.value.forEach((attr, index) => {
-    formData.append(`variants[0][attributes][${index}][name]`, attr.name)
-    formData.append(`variants[0][attributes][${index}][value]`, attr.value)
-  })
 
   formData.append('relatedProductIds', JSON.stringify(relatedProducts.value))
 
@@ -107,14 +75,6 @@ const addProduct = async () => {
                   placeholder="iPhone 14"
                 />
               </VCol>
-              <VCol cols="12">
-                <AppTextField
-                  v-model="productSKU"
-                  label="Product SKU"
-                  readonly="true"
-                  placeholder="iPhone 14"
-                />
-              </VCol>
               <VCol>
                 <span class="mb-1">Description (optional)</span>
                 <ProductDescriptionEditor
@@ -132,75 +92,16 @@ const addProduct = async () => {
             <template #title>
               Product Image
             </template>
-            <template #append>
-              <span class="text-primary font-weight-medium text-sm cursor-pointer">Add Media from URL</span>
-            </template>
           </VCardItem>
           <VCardText>
             <DropZone @update:files="val => uploadedFiles.value = val" />
           </VCardText>
         </VCard>
-
-        <!-- ✅ Variant Attributes -->
-        <div>
-          <div class="text-sm font-weight-medium mb-2">Variant Attributes</div>
-
-          <div
-            v-for="(attr, index) in variantAttributes"
-            :key="index"
-            class="d-flex align-center gap-2 mb-2"
-          >
-            <AppTextField
-              v-model="attr.name"
-              label="Name"
-              placeholder="e.g. Color"
-              style="width: 150px"
-            />
-            <AppTextField
-              v-model="attr.value"
-              label="Value"
-              placeholder="e.g. Red"
-              style="width: 150px"
-            />
-            <VBtn
-              icon
-              size="small"
-              color="error"
-              @click="variantAttributes.splice(index, 1)"
-            >
-              <VIcon icon="tabler-x" />
-            </VBtn>
-          </div>
-
-          <VBtn
-            variant="tonal"
-            color="primary"
-            size="small"
-            @click="variantAttributes.push({ name: '', value: '' })"
-          >
-            + Add Attribute
-          </VBtn>
-        </div>
       </VCol>
       <VCol
         md="4"
         cols="12"
       >
-        <!-- 👉 Pricing -->
-        <VCard
-          title="Pricing"
-          class="mb-6"
-        >
-          <VCardText>
-            <AppTextField
-              v-model="productPrice"
-              label="Best Price"
-              placeholder="Price"
-              class="mb-6"
-            />
-          </VCardText>
-        </VCard>
-
         <!-- 👉 Organize -->
         <VCard title="Organize">
           <VCardText>
@@ -235,11 +136,6 @@ const addProduct = async () => {
                 :items="useProduct.product.map(p => ({ title: p.name, value: p.id }))"
                 multiple
                 chips
-              />
-              <AppTextField
-                v-model="productStock"
-                label="Add to Stock"
-                placeholder="Quantity"
               />
             </div>
           </VCardText>

@@ -50,6 +50,7 @@ export const useProductStore = defineStore('userProduct', () => {
         inStock: selectedStock.value,
       },
     }))
+
     product.value = data.value?.data || []
     totalProduct.value = data.value?.pagination?.totalItems || 0
   }
@@ -183,6 +184,7 @@ export const useProductStore = defineStore('userProduct', () => {
 
       // Optional: refetch product list to reflect the updated stock
       await fetchProduct()
+      
       return data.value
     } catch (error) {
       console.error('Failed to update total stock:', error)
@@ -190,6 +192,50 @@ export const useProductStore = defineStore('userProduct', () => {
     }
   }
 
+  // Add a new variant via API
+  const createVariant = async (productId, variantData) => {
+    try {
+      const { data } = await useApi(`/product/variant/${productId}/add`, {
+        method: 'POST',
+        body: variantData, // no stringify!
+        // no headers!
+      })
+
+      return data.value
+    } catch (error) {
+      console.error('Error creating variant:', error)
+      throw error
+    }
+  }
+
+  const updateVariant = async (variantId, variantData) => {
+    try {
+      const { data } = await useApi(`/product/variant/${variantId}/update`, {
+        method: 'POST',
+        body: variantData, // no stringify!
+        // no headers!
+      })
+
+      return data.value
+    } catch (error) {
+      console.error('Error updating variant:', error)
+      throw error
+    }
+  }
+
+  // Remove a variant via API
+  const deleteVariant = async variantId => {
+    try {
+      await useApi(`/product/variant/${variantId}/delete/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+    } catch (error) {
+      console.error('Error deleting variant:', error)
+      throw error
+    }
+  }
+  
   return {
     searchQuery,
     selectedCategory,
@@ -218,5 +264,8 @@ export const useProductStore = defineStore('userProduct', () => {
     fetchCategoryById,
     categoryData,
     deleteCategory,
+    createVariant,  // New API method
+    updateVariant,  // New API method
+    deleteVariant,  // New API method
   }
 })
