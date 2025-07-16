@@ -9,6 +9,7 @@ export default [
       { title: 'List', to: 'apps-ecommerce-product-list', icon: { icon: 'tabler-list' } },
       { title: 'Category', to: 'apps-ecommerce-product-category-list', icon: { icon: 'tabler-tag' } },
       { title: 'List slide', to: 'apps-ecommerce-slide-list', icon: { icon: 'tabler-tag' } },
+      { title: 'List Order', to: 'apps-ecommerce-poster-list', icon: { icon: 'tabler-tag' } },
     ],
   },
   {
