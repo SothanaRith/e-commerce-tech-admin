@@ -37,7 +37,8 @@ onMounted(async () => {
     productPrice.value = product.price
     productStock.value = product.Variants?.[0]?.stock || 0
     productSKU.value = product.Variants?.[0]?.sku || ''
-    variantsProduct.value = product.Variants || []
+    variantsProduct.value = (product.Variants || []).slice().sort((a, b) => a.id - b.id)
+
     variantAttributes.value = product.Variants?.[0]?.VariantAttributes || []
     productCategory.value = product.categoryId
     for (const item of product.RelatedProducts) {
@@ -144,6 +145,9 @@ const submitProduct = async () => {
     variantFormData.append('title', variant.title)
     variantFormData.append('price', variant.price)
     variantFormData.append('stock', variant.stock)
+    variantFormData.append('discountType', variant.discountType || '')
+    variantFormData.append('discountValue', variant.discountValue || 0)
+    variantFormData.append('isPromotion', variant.isPromotion ? 'true' : 'false')
     variantFormData.append('attributes', JSON.stringify(plainAttrs))
 
     if (variant.imageUrl instanceof File) {
@@ -313,18 +317,44 @@ const submitProduct = async () => {
                         placeholder="Stock"
                         style="width: 100%"
                       />
+                      <AppSelect
+                        v-model="variant.discountType"
+                        label="Discount Type"
+                        :items="[
+                          { title: 'Fixed ($)', value: 'fixed' },
+                          { title: 'Percentage (%)', value: 'percent' },
+                        ]"
+                        placeholder="Select discount type"
+                        style="width: 100%"
+                      />
+
+                      <AppTextField
+                        v-model="variant.discountValue"
+                        label="Discount Value"
+                        placeholder="e.g. 10 or 5"
+                        type="number"
+                        style="width: 100%"
+                      />
+
+                      <VCheckbox
+                        v-model="variant.isPromotion"
+                        label="Is Promotion?"
+                        color="primary"
+                      />
                       <div
                         class="drop-zone mt-4"
                         @dragover.prevent
                         @drop.prevent="e => handleVariantDrop(e, index)"
                       >
-                        <p class="text-center text-caption">Drag & drop or click to upload</p>
+                        <p class="text-center text-caption">
+                          Drag & drop or click to upload
+                        </p>
                         <input
                           type="file"
                           class="hidden-input"
                           accept="image/*"
                           @change="e => handleImageUpload(e, index)"
-                        />
+                        >
                       </div>
 
                       <!-- ✅ Preview -->
