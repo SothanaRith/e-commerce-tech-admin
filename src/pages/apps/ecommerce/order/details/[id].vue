@@ -21,6 +21,7 @@ const headers = [
   { title: 'Product', key: 'productName' },
   { title: 'Price', key: 'price' },
   { title: 'Quantity', key: 'quantity' },
+  { title: 'Discount', key: 'discount' },
   { title: 'Total', key: 'total' },
 ]
 
@@ -61,14 +62,27 @@ const fetchData = async () => {
   trackingSteps.value = orderData.value?.trackingSteps
 
   // Process product list
-  orderDetail.value = orderData.value?.orderItems?.map(item => ({
-    productName: item.Product?.name || 'N/A',
-    productImage: `${baseUrl}${item.Product?.imageUrl?.[0] || ''}`,
-    subtitle: item.Product?.description || '',
-    price: parseFloat(item.Product?.price || 0).toFixed(2),
-    quantity: item.quantity,
-    total: parseFloat(item.price || 0).toFixed(2),
-  })) || []
+  orderDetail.value = orderData.value?.orderItems?.map(item => {
+    const variants = item.Product?.Variants || []
+
+    const matchedVariant = variants.find(
+      v => v.id?.toString() === item.variantId?.toString(),
+    ) || {} // fallback to empty object if not found
+
+    return {
+      productName: item.Product?.name || 'N/A',
+      productImage: `${baseUrl}${item.Product?.imageUrl?.[0] || ''}`,
+      subtitle: item.Product?.description || '',
+      price: parseFloat(item.Product?.price || 0).toFixed(2),
+      quantity: item.quantity,
+      total: parseFloat(item.price || 0).toFixed(2),
+
+      // You can include variant details here
+      variantName: matchedVariant.title || 'Default Variant',
+      variantPrice: matchedVariant.price || item.Product?.price || 0,
+      variantPromotion: matchedVariant.isPromotion ? `${matchedVariant.discountValue}${matchedVariant.discountType === 'fixed' ? '$' : '%'} off` : 'N/A',
+    }
+  }) || []
 }
 
 // User & billing data (update dynamically if needed)
@@ -202,18 +216,22 @@ const updateOrderStatus = async (id, orderStatus) => {
                   <h6 class="text-h6">
                     {{ item.productName }}
                   </h6>
-                  <span class="text-body-2">{{ item.subtitle }}</span>
+                  <span class="text-body-2">{{ item.variantName }}</span>
                 </div>
               </div>
             </template>
             <template #item.price="{ item }">
-              <div>${{ item.price }}</div>
+              <div>${{ item.variantPrice }}</div>
             </template>
             <template #item.total="{ item }">
               <div>${{ item.total }}</div>
             </template>
             <template #item.quantity="{ item }">
               <div>{{ item.quantity }}</div>
+            </template>
+
+            <template #item.discount="{ item }">
+              <div>{{ item.variantPromotion }}</div>
             </template>
             <template #bottom />
           </VDataTable>
