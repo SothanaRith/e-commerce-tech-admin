@@ -18,7 +18,10 @@ export const useChatStore = defineStore('chat', {
     setChatDetails(senderId, receiverId) {
       this.currentUserId = senderId
       this.currentReceiverId = receiverId
-      this.activeChat = { contact: {}, chat: { messages: [] } } // Make sure this is a new object to trigger reactivity
+      this.activeChat = {
+        contact: this.contacts.find(c => c.id === receiverId) || { id: receiverId },
+        chat: { messages: [] },
+      }
     },
 
     connectSocket() {
@@ -29,21 +32,27 @@ export const useChatStore = defineStore('chat', {
 
       this.socket.on('connect', () => {
         console.log('✅ Connected to socket server')
-        if (this.currentUserId) {
+        if (this.socket && this.socket.connected) {
           this.socket.emit('registerUser', this.currentUserId)
         }
       })
+
+      const scrollToBottomInChatLog = () => {
+        const chatLog = document.querySelector('.chat-log') // Adjust selector as needed
+        if (chatLog) {
+          chatLog.scrollTop = chatLog.scrollHeight // Scroll to the bottom of the chat log
+        }
+      }
 
       // Listen for new messages
       this.socket.on('newMessage', data => {
         console.log('📩 New message received:', data)
 
         // Update active chat messages
-        if (
-          this.activeChat &&
-                  (data.sender_id === this.activeChat.contact.id || data.receiver_id === this.activeChat.contact.id)
-        ) {
-          this.activeChat.chat.messages.push(data)
+        if (this.activeChat &&
+              (data.sender_id === this.currentReceiverId || data.receiver_id === this.currentReceiverId)) {
+          this.activeChat.chat.messages = [...this.activeChat.chat.messages, data]
+          nextTick(() => scrollToBottomInChatLog())
         }
 
         // Update chat list preview (lastMessage)
@@ -79,6 +88,7 @@ export const useChatStore = defineStore('chat', {
         console.error('Error fetching chats and contacts:', error)
       }
     },
+
     async getChatHistory(senderId, receiverId) {
       try {
         const res = await $api(`/chats`, {
