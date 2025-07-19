@@ -1,5 +1,8 @@
 import { defineStore } from 'pinia'
-import { useApi } from "@/composables/useApi.js"; // Adjust this import path based on your project structure
+import { useApi } from "@/composables/useApi.js" // Adjust this import path based on your project structure
+import { io } from 'socket.io-client'
+
+const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
@@ -7,83 +10,109 @@ export const useChatStore = defineStore('chat', {
     chatsContacts: [],
     profileUser: undefined,
     activeChat: null,
+    socket: null,
+    currentUserId: null,
+    currentReceiverId: null,
   }),
   actions: {
+    setChatDetails(senderId, receiverId) {
+      this.currentUserId = senderId
+      this.currentReceiverId = receiverId
+      this.activeChat = { contact: {}, chat: { messages: [] } } // Make sure this is a new object to trigger reactivity
+    },
+
+    connectSocket() {
+      if (this.socket && this.socket.connected) return
+
+      this.socket = io(import.meta.env.VITE_BASE_URL, { transports: ['websocket'] })
+      this.socket.connect()
+
+      this.socket.on('connect', () => {
+        console.log('✅ Connected to socket server')
+        if (this.currentUserId) {
+          this.socket.emit('registerUser', this.currentUserId)
+        }
+      })
+
+      // Listen for new messages
+      this.socket.on('newMessage', data => {
+        console.log('📩 New message received:', data)
+
+        // Update active chat messages
+        if (
+          this.activeChat &&
+                  (data.sender_id === this.activeChat.contact.id || data.receiver_id === this.activeChat.contact.id)
+        ) {
+          this.activeChat.chat.messages.push(data)
+        }
+
+        // Update chat list preview (lastMessage)
+        const chatItem = this.chatsContacts.find(
+          c => c.id === data.sender_id || c.id === data.receiver_id,
+        )
+
+        if (chatItem) {
+          // chatItem.chat.lastMessage = data
+        }
+      })
+
+      this.socket.on('disconnect', () => console.log('❌ Socket disconnected'))
+    },
+
     async fetchChatsAndContacts(q) {
       try {
         const { data } = await useApi(
           createUrl('chats/chats-and-contacts', {
-            query: { q, userId: 3 }, // Adjust userId if necessary
-            baseURL: '/api', // Ensure it points to your Node backend
+            query: { q, userId: this.currentUserId || 3 }, // fallback userId
+            baseURL: '/api',
           }),
         )
 
-        // Ensure data.value is not null or undefined
         if (data?.value) {
           const { chatsContacts = [], contacts = [], profileUser = {} } = data.value
 
-          // Update store with fetched data
           this.chatsContacts = chatsContacts
           this.contacts = contacts
           this.profileUser = profileUser
-        } else {
-          console.error("Invalid data received:", data)
         }
       } catch (error) {
         console.error('Error fetching chats and contacts:', error)
       }
     },
-
-    async getChat(userId) {
+    async getChatHistory(senderId, receiverId) {
       try {
         const res = await $api(`/chats`, {
-          query: { senderId: this.profileUser?.id, receiverId: userId },
+          query: { senderId, receiverId },
         })
 
-        // Update the active chat in the store
+        // Sort messages like Flutter
+        res.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         this.activeChat = {
-          contact: this.contacts.find(c => c.id === userId),
+          contact: this.contacts.find(c => c.id === receiverId),
           chat: { messages: res },
         }
-      } catch (error) {
-        console.error('Error fetching chat:', error)
+      } catch (e) {
+        console.error('❌ Failed to get chat history:', e)
       }
     },
 
-    async sendMsg(message) {
-      try {
-        const senderId = this.profileUser?.id
-        const receiverId = this.activeChat?.contact.id
-
-        // Send the message to the API
-        const response = await $api(`/chats`, {
-          method: 'POST',
-          body: { message, sender_id: senderId, receiver_id: receiverId },
+    sendMessage(message) {
+      if (!message.trim()) return
+      if (this.socket && this.socket.connected) {
+        this.socket.emit('sendMessage', {
+          sender_id: this.currentUserId,
+          receiver_id: this.currentReceiverId,
+          message,
         })
-
-        const msg = response
-
-        // If new chat is created (not in list of chats)
-        const existingChat = this.chatsContacts.find(c => c.id === receiverId)
-        if (!existingChat) {
-          this.chatsContacts.push({
-            ...this.activeChat.contact,
-            chat: {
-              id: msg.id,
-              lastMessage: msg,
-              unseenMsgs: 0,
-              messages: [msg],
-            },
-          })
-        } else {
-          // Update the existing chat
-          this.activeChat.chat.messages.push(msg)
-
-          // existingChat.chat.lastMessage = msg
-        }
-      } catch (error) {
-        console.error('Error sending message:', error)
+      } else {
+        console.warn('⚠️ Socket is not connected')
       }
+    },
+
+    disconnectSocket() {
+      this.socket?.disconnect()
+      this.socket = null
     },
   },
+  persist: true,
 })

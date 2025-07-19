@@ -1,9 +1,6 @@
 <script setup>
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
-import {
-  useDisplay,
-  useTheme,
-} from 'vuetify'
+import { useDisplay, useTheme } from 'vuetify'
 import { themes } from '@/plugins/vuetify/theme.js'
 import ChatLeftSidebarContent from '@/views/apps/chat/ChatLeftSidebarContent.vue'
 import ChatLog from '@/views/apps/chat/ChatLog.vue'
@@ -22,20 +19,23 @@ const { resolveAvatarBadgeVariant } = useChat()
 const chatLogPS = ref()
 
 const scrollToBottomInChatLog = () => {
+  if (!chatLogPS.value) return
   const scrollEl = chatLogPS.value.$el || chatLogPS.value
-
   scrollEl.scrollTop = scrollEl.scrollHeight
 }
 
 // Search query
 const q = ref('')
 
-watch(q, val => store.fetchChatsAndContacts(val), { immediate: true })
+// Fetch contacts and chats
+watch(q, val => {
+  if (store.fetchChatsAndContacts)
+    store.fetchChatsAndContacts(val)
+}, { immediate: true })
 
 // Open Sidebar in smAndDown when "start conversation" is clicked
 const startConversation = () => {
-  if (vuetifyDisplays.mdAndUp.value)
-    return
+  if (vuetifyDisplays.mdAndUp.value) return
   isLeftSidebarOpen.value = true
 }
 
@@ -43,47 +43,38 @@ const startConversation = () => {
 const msg = ref('')
 
 const sendMessage = async () => {
-  if (!msg.value)
-    return
-  await store.sendMsg(msg.value)
+  if (!msg.value) return
 
-  // Reset message input
+  await store.sendMessage(msg.value) // Updated method name for consistency
   msg.value = ''
 
-  // Scroll to bottom
-  nextTick(() => {
-    scrollToBottomInChatLog()
-  })
+  nextTick(() => scrollToBottomInChatLog())
 }
 
 const userData = useCookie('userData')
 
+// Open a contact's chat
 const openChatOfContact = async userId => {
-  console.log(userId)
-  await store.getChat(userId)
+  if (!store.profileUser?.id) {
+    console.warn('No profile user set yet.')
+    return
+  }
 
-  // Reset message input
+  store.setChatDetails(store.profileUser.id, userId)
+  await store.getChatHistory(store.profileUser.id, userId)
+
   msg.value = ''
 
-  // Set unseenMsgs to 0
+  // Mark unseen messages as read
   const contact = store.chatsContacts.find(c => c.receiver.id === userId || c.sender.id === userId)
-  if (contact)
-    contact.is_read = true
+  if (contact) contact.is_read = true
 
-  // if smAndDown =>  Close Chat & Contacts left sidebar
-  if (vuetifyDisplays.smAndDown.value)
-    isLeftSidebarOpen.value = false
-
-  // Scroll to bottom
-  nextTick(() => {
-    scrollToBottomInChatLog()
-  })
+  if (vuetifyDisplays.smAndDown.value) isLeftSidebarOpen.value = false
+  nextTick(() => scrollToBottomInChatLog())
 }
 
 // User profile sidebar
 const isUserProfileSidebarOpen = ref(false)
-
-// Active chat user profile sidebar
 const isActiveChatUserProfileSidebarOpen = ref(false)
 
 // file input
@@ -92,10 +83,13 @@ const { name } = useTheme()
 
 const chatContentContainerBg = computed(() => {
   let color = 'transparent'
-  if (themes)
-    color = themes?.[name.value].colors?.background
-
+  if (themes) color = themes?.[name.value].colors?.background
   return color
+})
+
+// --- Connect socket on mount ---
+onMounted(() => {
+  store.connectSocket()
 })
 </script>
 
@@ -104,7 +98,7 @@ const chatContentContainerBg = computed(() => {
     class="chat-app-layout"
     style="z-index: 0;"
   >
-    <!-- 👉 Left sidebar   -->
+    <!-- 👉 Left sidebar -->
     <VNavigationDrawer
       v-model="isLeftSidebarOpen"
       data-allow-mismatch
@@ -188,7 +182,7 @@ const chatContentContainerBg = computed(() => {
           :options="{ wheelPropagation: false }"
           class="flex-grow-1"
         >
-          <ChatLog :user="store.activeChat.contact" />
+          <ChatLog :user="store.activeChat.contact" :chat-log-ref="chatLogPS" />
         </PerfectScrollbar>
 
         <!-- Message form -->
