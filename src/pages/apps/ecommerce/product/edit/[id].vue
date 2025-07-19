@@ -55,8 +55,12 @@ const removeImage = index => {
   existingImages.value.splice(index, 1)  // Removes the image from the array at the specified index
 }
 
-const removeVariant = index => {
+const removeVariant = async index => {
   variantsProduct.value.splice(index, 1)
+
+  const id = variantsProduct.value[0].id
+
+  await useProduct.deleteVariant(id)
 }
 
 const removeAttribute = (variantIndex, attributeIndex) => {

@@ -21,21 +21,6 @@ export const useProductStore = defineStore('userProduct', () => {
   const categoryData = ref()
   const totalProduct = ref(0)
   const router = useRouter()
-  const productName = ref('')
-  const productSKU = ref('')
-  const productPrice = ref(499)
-  const productDescription = ref('<p>Product description</p>')
-  const productCategory = ref(null)
-  const relatedProducts = ref([])
-
-  const productVariants = ref([
-    {
-      sku: '',
-      price: 0,
-      stock: 0,
-      attributes: [{ name: '', value: '' }],
-    },
-  ])
 
   const fetchProduct = async () => {
     const { data } = await useApi(createUrl('/product/search/1', {

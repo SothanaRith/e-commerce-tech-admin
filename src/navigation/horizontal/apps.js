@@ -1,6 +1,12 @@
 
 export default [
   {
+    title: 'Dashboards',
+    icon: { icon: 'tabler-smart-home' },
+    to: 'dashboards-ecommerce',
+
+  },
+  {
     title: 'Product',
 
     icon: { icon: 'tabler-shopping-bag' },
@@ -8,6 +14,8 @@ export default [
       { title: 'List', to: 'apps-ecommerce-product-list', icon: { icon: 'tabler-list' } },
       { title: 'Category', to: 'apps-ecommerce-product-category-list', icon: { icon: 'tabler-tag' } },
       { title: 'List slide', to: 'apps-ecommerce-slide-list', icon: { icon: 'tabler-tag' } },
+      { title: 'List Poster', to: 'apps-ecommerce-poster-list', icon: { icon: 'tabler-tag' } },
+
     ],
   },
   {
@@ -15,6 +23,11 @@ export default [
     children: [
       { title: 'List', to: 'apps-ecommerce-order-list', icon: { icon: 'tabler-list' } },
     ],
+  },
+  {
+    title: 'Chat',
+    icon: { icon: 'tabler-message-circle-2' },
+    to: 'apps-chat',
   },
   {
     title: 'User',
