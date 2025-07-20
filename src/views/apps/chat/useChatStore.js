@@ -27,6 +27,12 @@ export const useChatStore = defineStore('chat', {
     connectSocket() {
       if (this.socket && this.socket.connected) return
 
+      if (!this.currentUserId) {
+        console.error('⚠️ User ID is not set.')
+
+        return
+      }
+
       this.socket = io(import.meta.env.VITE_BASE_URL, { transports: ['websocket'] })
       this.socket.connect()
 
@@ -44,25 +50,17 @@ export const useChatStore = defineStore('chat', {
         }
       }
 
-      // Listen for new messages
-      this.socket.on('newMessage', data => {
+      this.socket.on('newMessage', async data => {
         console.log('📩 New message received:', data)
 
-        // Update active chat messages
-        if (this.activeChat &&
-              (data.sender_id === this.currentReceiverId || data.receiver_id === this.currentReceiverId)) {
-          this.activeChat.chat.messages = [...this.activeChat.chat.messages, data]
-          nextTick(() => scrollToBottomInChatLog())
+        // Ensure that the message has all the required information
+        if (!data.sender_name || !data.receiver_name || !data.sender_email || !data.receiver_email) {
+          console.log('⚠️ Incoming message is missing required user info!')
+
+          return
         }
 
-        // Update chat list preview (lastMessage)
-        const chatItem = this.chatsContacts.find(
-          c => c.id === data.sender_id || c.id === data.receiver_id,
-        )
-
-        if (chatItem) {
-          // chatItem.chat.lastMessage = data
-        }
+        this.activeChat.chat.messages = [...this.activeChat.chat.messages, data]
       })
 
       this.socket.on('disconnect', () => console.log('❌ Socket disconnected'))
@@ -99,7 +97,7 @@ export const useChatStore = defineStore('chat', {
         res.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         this.activeChat = {
           contact: this.contacts.find(c => c.id === receiverId),
-          chat: { messages: res },
+          chat: { messages: [...res] }, // Using a shallow copy to ensure reactivity
         }
       } catch (e) {
         console.error('❌ Failed to get chat history:', e)

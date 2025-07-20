@@ -29,11 +29,11 @@ let timer = null
 const useAuth = useAuthStore()
 
 const onFinish = () => {
-  isOtpInserted.value = true
-  setTimeout(() => {
-    isOtpInserted.value = false
-    router.push('/')
-  }, 2000)
+  // isOtpInserted.value = true
+  // // setTimeout(() => {
+  // //   isOtpInserted.value = false
+  // //   router.push('/')
+  // // }, 2000)
 }
 
 const startCooldown = () => {

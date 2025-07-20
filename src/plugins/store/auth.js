@@ -65,10 +65,6 @@ export const useAuthStore = defineStore('userAuth', () => {
       useCookie('accessToken').value = accessToken
         
       await fetchUserById()
-
-      // await nextTick(() => {
-      //   router.replace(route.query.to ? String(route.query.to) : '/dashboards/ecommerce')
-      // })
         
     } catch (err) {
       console.error(err)
@@ -89,6 +85,9 @@ export const useAuthStore = defineStore('userAuth', () => {
       useCookie('userAbilityRules').value = userAbilityRules
       ability.update(userAbilityRules)
 
+      await nextTick(() => {
+        router.replace(route.query.to ? String(route.query.to) : '/dashboards/ecommerce')
+      })
     } catch (error) {
       console.error('Error fetching orders:', error)
     }

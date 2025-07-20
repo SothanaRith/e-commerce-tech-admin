@@ -6,6 +6,7 @@ import ChatLeftSidebarContent from '@/views/apps/chat/ChatLeftSidebarContent.vue
 import ChatLog from '@/views/apps/chat/ChatLog.vue'
 import { useChat } from "@/views/apps/chat/useChat.js"
 import { useChatStore } from '@/views/apps/chat/useChatStore.js'
+import {nextTick, watch} from "vue";
 
 definePage({ meta: { layoutWrapperClasses: 'layout-content-height-fixed' } })
 
@@ -72,6 +73,11 @@ const openChatOfContact = async userId => {
   if (vuetifyDisplays.smAndDown.value) isLeftSidebarOpen.value = false
   nextTick(() => scrollToBottomInChatLog())
 }
+
+watch(() => store.activeChat?.chat.messages, (newVal, oldVal) => {
+  if (newVal?.length > (oldVal?.length || 0)) nextTick(() => scrollToBottomInChatLog())
+})
+
 
 // User profile sidebar
 const isUserProfileSidebarOpen = ref(false)

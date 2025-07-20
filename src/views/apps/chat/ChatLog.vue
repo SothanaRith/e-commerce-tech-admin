@@ -68,7 +68,7 @@
 
 <script setup>
 import { useChatStore } from '@/views/apps/chat/useChatStore'
-import { computed, watch, nextTick } from 'vue'
+import { computed, watch, nextTick, onMounted } from 'vue'
 
 const props = defineProps({
   isChatContact: {
@@ -88,7 +88,7 @@ const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 // Computed property for checking if the contact is active
 const isChatContactActive = computed(() => {
   const isActive = store.activeChat?.contact.id === props.user.id
-  
+
   return props.isChatContact ? isActive : !store.activeChat?.chat && isActive
 })
 
@@ -98,7 +98,6 @@ const getUnseenMessages = computed(() => {
     chat => chat.sender.id === props.user.id || chat.receiver.id === props.user.id,
   )
 
-  
   return contactChat && !contactChat.is_read ? 1 : 0
 })
 
@@ -107,7 +106,6 @@ const openChatOfContact = userId => {
   store.setChatDetails(store.profileUser.id, userId)
   store.getChatHistory(store.profileUser.id, userId)
 
-
   // Mark unseen messages as read
   const contact = store.chatsContacts.find(c => c.receiver.id === userId || c.sender.id === userId)
   if (contact) {
@@ -115,14 +113,6 @@ const openChatOfContact = userId => {
   }
   scrollToBottomInChatLog()
 }
-
-
-
-// Watch for new messages and scroll to the bottom when new ones are received
-watch(() => store.activeChat?.chat?.messages, (newVal, oldVal) => {
-  if (newVal?.length > (oldVal?.length || 0)) nextTick(() => scrollToBottomInChatLog())
-})
-
 
 onMounted(() => {
   store.connectSocket()
