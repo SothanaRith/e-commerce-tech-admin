@@ -1,22 +1,20 @@
 <script setup>
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
+import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useDisplay, useTheme } from 'vuetify'
+import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
+import { useChat } from "@/views/apps/chat/useChat.js"
+import { useChatStore } from '@/views/apps/chat/useChatStore.js'
 import { themes } from '@/plugins/vuetify/theme.js'
 import ChatLeftSidebarContent from '@/views/apps/chat/ChatLeftSidebarContent.vue'
 import ChatLog from '@/views/apps/chat/ChatLog.vue'
-import { useChat } from "@/views/apps/chat/useChat.js"
-import { useChatStore } from '@/views/apps/chat/useChatStore.js'
-import { nextTick, watch } from "vue"
 
 definePage({ meta: { layoutWrapperClasses: 'layout-content-height-fixed' } })
 
-// composables
 const vuetifyDisplays = useDisplay()
 const store = useChatStore()
-const { isLeftSidebarOpen } = useResponsiveLeftSidebar(vuetifyDisplays.smAndDown)
 const { resolveAvatarBadgeVariant } = useChat()
-
-// Perfect scrollbar
+const { name } = useTheme()
+const { isLeftSidebarOpen } = useResponsiveLeftSidebar(vuetifyDisplays.smAndDown)
 const chatLogPS = ref()
 
 const scrollToBottomInChatLog = () => {
@@ -26,68 +24,61 @@ const scrollToBottomInChatLog = () => {
   scrollEl.scrollTop = scrollEl.scrollHeight
 }
 
-// Search query
 const q = ref('')
 
-// Fetch contacts and chats
 watch(q, val => {
-  if (store.fetchChatsAndContacts)
-    store.fetchChatsAndContacts(val)
+  if (store.fetchChatsAndContacts) store.fetchChatsAndContacts(val)
 }, { immediate: true })
 
-// Open Sidebar in smAndDown when "start conversation" is clicked
 const startConversation = () => {
-  if (vuetifyDisplays.mdAndUp.value) return
-  isLeftSidebarOpen.value = true
+  if (!vuetifyDisplays.mdAndUp.value) isLeftSidebarOpen.value = true
 }
 
 // Chat message
 const msg = ref('')
+const previewImage = ref(null)
+const refInputEl = ref()
+
+const handleImageChange = e => {
+  const file = e.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+
+  reader.onload = () => {
+    previewImage.value = reader.result
+  }
+  reader.readAsDataURL(file)
+}
+
+const clearMessageForm = () => {
+  msg.value = ''
+  previewImage.value = null
+  if (refInputEl.value) refInputEl.value.value = ''
+  nextTick(() => scrollToBottomInChatLog())
+}
 
 const sendMessage = async () => {
-  if (!msg.value && !refInputEl.value?.files.length) return
+  if (!msg.value && !previewImage.value) return
 
-  // If there's a file selected
-  if (refInputEl.value?.files.length) {
-    const file = refInputEl.value.files[0]
-    const reader = new FileReader()
-
-    reader.onload = async () => {
-      const base64Image = reader.result.split(',')[1] // Get base64 part
-
-      await store.sendMessage(msg.value, base64Image)
-      refInputEl.value.value = ''  // Clear file input after sending
-    }
-
-    reader.readAsDataURL(file) // Read the image as base64
-  } else {
-    // Send regular text message
-    await store.sendMessage(msg.value)
+  let base64Image = null
+  if (previewImage.value) {
+    base64Image = previewImage.value.split(',')[1]
   }
 
-  msg.value = ''  // Clear message input
-  nextTick(() => scrollToBottomInChatLog())
+  await store.sendMessage(msg.value, base64Image)
+  clearMessageForm()
 }
 
 const userData = useCookie('userData')
 
-// Open a contact's chat
 const openChatOfContact = async userId => {
-  if (!store.profileUser?.id) {
-    console.warn('No profile user set yet.')
-    
-    return
-  }
-
+  if (!store.profileUser?.id) return
   store.setChatDetails(store.profileUser.id, userId)
   await store.getChatHistory(store.profileUser.id, userId)
-
   msg.value = ''
 
-  // Mark unseen messages as read
   const contact = store.chatsContacts.find(c => c.receiver.id === userId || c.sender.id === userId)
   if (contact) contact.is_read = true
-
   if (vuetifyDisplays.smAndDown.value) isLeftSidebarOpen.value = false
   nextTick(() => scrollToBottomInChatLog())
 }
@@ -96,14 +87,8 @@ watch(() => store.activeChat?.chat.messages, (newVal, oldVal) => {
   if (newVal?.length > (oldVal?.length || 0)) nextTick(() => scrollToBottomInChatLog())
 })
 
-
-// User profile sidebar
 const isUserProfileSidebarOpen = ref(false)
 const isActiveChatUserProfileSidebarOpen = ref(false)
-
-// file input
-const refInputEl = ref()
-const { name } = useTheme()
 
 const chatContentContainerBg = computed(() => {
   let color = 'transparent'
@@ -112,14 +97,22 @@ const chatContentContainerBg = computed(() => {
   return color
 })
 
-// --- Connect socket on mount ---
+const triggerFileInput = () => {
+  if (refInputEl.value && typeof refInputEl.value.click === 'function') {
+    refInputEl.value.click()
+  }
+}
+
 onMounted(() => {
   store.connectSocket()
 })
 </script>
 
 <template>
-  <VLayout class="chat-app-layout" style="z-index: 0;">
+  <VLayout
+    class="chat-app-layout"
+    style="z-index: 0;"
+  >
     <!-- 👉 Left sidebar -->
     <VNavigationDrawer
       v-model="isLeftSidebarOpen"
@@ -144,7 +137,10 @@ onMounted(() => {
     <!-- 👉 Chat content -->
     <VMain class="chat-content-container">
       <!-- 👉 Active chat header -->
-      <div v-if="store.activeChat" class="d-flex flex-column h-100">
+      <div
+        v-if="store.activeChat"
+        class="d-flex flex-column h-100"
+      >
         <div class="active-chat-header d-flex align-center text-medium-emphasis bg-surface">
           <IconBtn
             class="d-md-none me-3"
@@ -205,6 +201,7 @@ onMounted(() => {
         </PerfectScrollbar>
 
         <!-- Message form -->
+        <!-- Message form -->
         <VForm
           class="chat-log-message-form mb-5 mx-5"
           @submit.prevent="sendMessage"
@@ -222,7 +219,7 @@ onMounted(() => {
               <div class="d-flex gap-1">
                 <IconBtn
                   append-icon="tabler-photo"
-                  @click="refInputEl.click()"
+                  @click="triggerFileInput"
                 >
                   <VIcon icon="tabler-photo" />
                 </IconBtn>
@@ -245,13 +242,24 @@ onMounted(() => {
             </template>
           </VTextField>
 
+          <!-- Preview Image -->
+          <VImg
+            v-if="previewImage"
+            :src="previewImage"
+            max-height="100"
+            max-width="100"
+            class="mt-2 rounded-lg elevation-2"
+          />
+
+          <!-- Hidden file input -->
           <input
             ref="refInputEl"
             type="file"
             name="file"
-            accept=".jpeg,.png,.jpg,.GIF"
+            accept=".jpeg,.png,.jpg,.gif"
             hidden
-          >
+            @change="handleImageChange"
+          />
         </VForm>
       </div>
 
