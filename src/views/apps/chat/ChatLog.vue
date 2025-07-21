@@ -37,9 +37,22 @@
       elevation="1"
     >
       <div class="d-flex flex-column">
+        <div v-if="message.file_url">
+          <VImg
+            :src="`${baseUrl}${message.file_url}`"
+            alt="Message Image"
+            class="message-image"
+          />
+        </div>
+        <div v-if="message.file_url" class="mt-2">
+
+        </div>
+
+        <!-- Message content -->
         <div class="text-body-1">
           {{ message.message }}
         </div>
+
         <div class="d-flex flex-row align-center gap-1">
           <VAvatar
             v-if="message.sender_id !== 3"

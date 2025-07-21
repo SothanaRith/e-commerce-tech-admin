@@ -104,14 +104,21 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
-    sendMessage(message) {
-      if (!message.trim()) return
+    sendMessage(message, imageBase64 = null) {
+      if (!message.trim() && !imageBase64) return
+
       if (this.socket && this.socket.connected) {
-        this.socket.emit('sendMessage', {
-          sender_id: 3,
+        const payload = {
+          sender_id: this.currentUserId,
           receiver_id: this.currentReceiverId,
-          message,
-        })
+          message: message,
+        }
+
+        if (imageBase64) {
+          payload.image_base64 = imageBase64
+        }
+
+        this.socket.emit('sendMessage', payload)
       } else {
         console.warn('⚠️ Socket is not connected')
       }

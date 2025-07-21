@@ -6,7 +6,7 @@ import ChatLeftSidebarContent from '@/views/apps/chat/ChatLeftSidebarContent.vue
 import ChatLog from '@/views/apps/chat/ChatLog.vue'
 import { useChat } from "@/views/apps/chat/useChat.js"
 import { useChatStore } from '@/views/apps/chat/useChatStore.js'
-import {nextTick, watch} from "vue";
+import { nextTick, watch } from "vue"
 
 definePage({ meta: { layoutWrapperClasses: 'layout-content-height-fixed' } })
 
@@ -22,6 +22,7 @@ const chatLogPS = ref()
 const scrollToBottomInChatLog = () => {
   if (!chatLogPS.value) return
   const scrollEl = chatLogPS.value.$el || chatLogPS.value
+
   scrollEl.scrollTop = scrollEl.scrollHeight
 }
 
@@ -44,11 +45,27 @@ const startConversation = () => {
 const msg = ref('')
 
 const sendMessage = async () => {
-  if (!msg.value) return
+  if (!msg.value && !refInputEl.value?.files.length) return
 
-  await store.sendMessage(msg.value) // Updated method name for consistency
-  msg.value = ''
+  // If there's a file selected
+  if (refInputEl.value?.files.length) {
+    const file = refInputEl.value.files[0]
+    const reader = new FileReader()
 
+    reader.onload = async () => {
+      const base64Image = reader.result.split(',')[1] // Get base64 part
+
+      await store.sendMessage(msg.value, base64Image)
+      refInputEl.value.value = ''  // Clear file input after sending
+    }
+
+    reader.readAsDataURL(file) // Read the image as base64
+  } else {
+    // Send regular text message
+    await store.sendMessage(msg.value)
+  }
+
+  msg.value = ''  // Clear message input
   nextTick(() => scrollToBottomInChatLog())
 }
 
@@ -58,6 +75,7 @@ const userData = useCookie('userData')
 const openChatOfContact = async userId => {
   if (!store.profileUser?.id) {
     console.warn('No profile user set yet.')
+    
     return
   }
 
@@ -90,6 +108,7 @@ const { name } = useTheme()
 const chatContentContainerBg = computed(() => {
   let color = 'transparent'
   if (themes) color = themes?.[name.value].colors?.background
+  
   return color
 })
 
@@ -100,10 +119,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <VLayout
-    class="chat-app-layout"
-    style="z-index: 0;"
-  >
+  <VLayout class="chat-app-layout" style="z-index: 0;">
     <!-- 👉 Left sidebar -->
     <VNavigationDrawer
       v-model="isLeftSidebarOpen"
@@ -127,14 +143,9 @@ onMounted(() => {
 
     <!-- 👉 Chat content -->
     <VMain class="chat-content-container">
-      <!-- 👉 Right content: Active Chat -->
-      <div
-        v-if="store.activeChat"
-        class="d-flex flex-column h-100"
-      >
-        <!-- 👉 Active chat header -->
+      <!-- 👉 Active chat header -->
+      <div v-if="store.activeChat" class="d-flex flex-column h-100">
         <div class="active-chat-header d-flex align-center text-medium-emphasis bg-surface">
-          <!-- Sidebar toggler -->
           <IconBtn
             class="d-md-none me-3"
             @click="isLeftSidebarOpen = true"
@@ -142,7 +153,7 @@ onMounted(() => {
             <VIcon icon="tabler-menu-2" />
           </IconBtn>
 
-          <!-- avatar -->
+          <!-- Avatar and Name -->
           <div class="d-flex align-center cursor-pointer">
             <VBadge
               dot
@@ -178,7 +189,6 @@ onMounted(() => {
           </div>
           <VSpacer />
         </div>
-
         <VDivider />
 
         <!-- Chat log -->
@@ -188,7 +198,10 @@ onMounted(() => {
           :options="{ wheelPropagation: false }"
           class="flex-grow-1"
         >
-          <ChatLog :user="store.activeChat.contact" :chat-log-ref="chatLogPS" />
+          <ChatLog
+            :user="store.activeChat.contact"
+            :chat-log-ref="chatLogPS"
+          />
         </PerfectScrollbar>
 
         <!-- Message form -->
@@ -207,6 +220,13 @@ onMounted(() => {
           >
             <template #append-inner>
               <div class="d-flex gap-1">
+                <IconBtn
+                  append-icon="tabler-photo"
+                  @click="refInputEl.click()"
+                >
+                  <VIcon icon="tabler-photo" />
+                </IconBtn>
+
                 <div class="d-none d-md-block">
                   <VBtn
                     append-icon="tabler-send"
@@ -229,7 +249,7 @@ onMounted(() => {
             ref="refInputEl"
             type="file"
             name="file"
-            accept=".jpeg,.png,.jpg,GIF"
+            accept=".jpeg,.png,.jpg,.GIF"
             hidden
           >
         </VForm>
@@ -265,7 +285,7 @@ onMounted(() => {
           style="max-inline-size: 40ch; text-wrap: balance;"
           class="text-center text-disabled"
         >
-          Start connecting with the people by selecting one of the contact on left
+          Start connecting with the people by selecting one of the contacts on the left
         </p>
       </div>
     </VMain>
