@@ -43,24 +43,24 @@ export const useChatStore = defineStore('chat', {
         }
       })
 
-      const scrollToBottomInChatLog = () => {
-        const chatLog = document.querySelector('.chat-log') // Adjust selector as needed
-        if (chatLog) {
-          chatLog.scrollTop = chatLog.scrollHeight // Scroll to the bottom of the chat log
-        }
-      }
-
-      this.socket.on('newMessage', async data => {
+      this.socket.on('newMessage', data => {
         console.log('📩 New message received:', data)
 
-        // Ensure that the message has all the required information
-        if (!data.sender_name || !data.receiver_name || !data.sender_email || !data.receiver_email) {
-          console.log('⚠️ Incoming message is missing required user info!')
-
-          return
-        }
-
         this.activeChat.chat.messages = [...this.activeChat.chat.messages, data]
+
+        // Update active chat messages
+        // if (this.activeChat && (data.sender_id === this.currentReceiverId || data.receiver_id === this.currentReceiverId)) {
+        //   this.activeChat.chat.messages = [...this.activeChat.chat.messages, data]
+        // }
+
+        // Update chat list preview (lastMessage)
+        const chatItem = this.chatsContacts.find(
+          c => c.id === data.sender_id || c.id === data.receiver_id,
+        )
+
+        if (chatItem) {
+          // chatItem.chat.lastMessage = data
+        }
       })
 
       this.socket.on('disconnect', () => console.log('❌ Socket disconnected'))
@@ -108,7 +108,7 @@ export const useChatStore = defineStore('chat', {
       if (!message.trim()) return
       if (this.socket && this.socket.connected) {
         this.socket.emit('sendMessage', {
-          sender_id: this.currentUserId,
+          sender_id: 3,
           receiver_id: this.currentReceiverId,
           message,
         })

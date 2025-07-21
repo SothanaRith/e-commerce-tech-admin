@@ -32,7 +32,7 @@
       :key="message.id"
       class="pa-3 message-card"
       :class="[
-        message.id !== props.user.id ? 'message-sent' : 'message-received'
+        message.sender_id !== 3 ? 'message-received' : 'message-sent'
       ]"
       elevation="1"
     >
@@ -42,7 +42,7 @@
         </div>
         <div class="d-flex flex-row align-center gap-1">
           <VAvatar
-            v-if="message.id === props.user.id"
+            v-if="message.sender_id !== 3"
             size="20"
             :variant="!props.user.coverImage ? 'tonal' : undefined"
             color="primary"
