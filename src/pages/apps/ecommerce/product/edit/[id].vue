@@ -152,6 +152,7 @@ const submitProduct = async () => {
     variantFormData.append('discountType', variant.discountType || '')
     variantFormData.append('discountValue', variant.discountValue || 0)
     variantFormData.append('isPromotion', variant.isPromotion ? 'true' : 'false')
+    variantFormData.append('isActive', variant.isActive ? 'true' : 'false')
     variantFormData.append('attributes', JSON.stringify(plainAttrs))
 
     if (variant.imageUrl instanceof File) {
@@ -343,6 +344,11 @@ const submitProduct = async () => {
                       <VCheckbox
                         v-model="variant.isPromotion"
                         label="Is Promotion?"
+                        color="primary"
+                      />
+                      <VCheckbox
+                        v-model="variant.isActive"
+                        label="Variant Is Active?"
                         color="primary"
                       />
                       <div
