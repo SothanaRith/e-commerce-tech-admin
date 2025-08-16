@@ -69,8 +69,6 @@ const sendMessage = async () => {
   clearMessageForm()
 }
 
-const userData = useCookie('userData')
-
 const openChatOfContact = async userId => {
   if (!store.profileUser?.id) return
   store.setChatDetails(store.profileUser.id, userId)

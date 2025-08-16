@@ -9,7 +9,7 @@ const selectedRows = ref([])
 const isEditRoleDialogVisible = ref()
 const useUser = useUserStore()
 const selectedUserId = ref()
-
+const userData = useCookie('userData')
 const updateOptions = options => {
   sortBy.value = options.sortBy[0]?.key
   orderBy.value = options.sortBy[0]?.order
@@ -42,6 +42,10 @@ await useUser.fetchUser()
 
 // 👉 search filters
 const roles = [
+  {
+    title: 'Super Admin',
+    value: 'superAdmin',
+  },
   {
     title: 'Admin',
     value: 'admin',
@@ -91,7 +95,12 @@ const resolveUserRoleVariant = role => {
     }
   if (roleLowerCase === 'admin')
     return {
-      color: 'primary',
+      color: 'info',
+      icon: 'tabler-crown',
+    }
+  if (roleLowerCase === 'superadmin')
+    return {
+      color: 'warning',
       icon: 'tabler-crown',
     }
   
@@ -224,13 +233,16 @@ const resolveUserStatusVariant = stat => {
               <span v-else>{{ avatarText(item.name) }}</span>
             </VAvatar>
             <div class="d-flex flex-column">
-              <h6 class="text-base">
+              <h6 class="text-base" v-if="userData.role === 'superAdmin' || item.role === 'buyer'">
                 <RouterLink
                   :to="{ name: 'apps-user-view-id', params: { id: item.id } }"
                   class="font-weight-medium text-link"
                 >
                   {{ item.name }}
                 </RouterLink>
+              </h6>
+              <h6 class="text-base font-weight-medium" v-else>
+                {{ item.name }}
               </h6>
               <div class="text-sm">
                 {{ item.email }}
@@ -276,19 +288,20 @@ const resolveUserStatusVariant = stat => {
             <VIcon icon="tabler-dots-vertical" />
             <VMenu activator="parent">
               <VList>
-                <VListItem :to="{ name: 'apps-user-view-id', params: { id: item.id } }">
+                <VListItem :to="{ name: 'apps-user-view-id', params: { id: item.id } }" :disabled="item.role !== 'buyer'">
                   <template #prepend>
                     <VIcon icon="tabler-eye" />
                   </template>
-
                   <VListItemTitle>View</VListItemTitle>
                 </VListItem>
-                <VListItem @click="editRole(item.id)">
-                  <template #prepend>
-                    <VIcon icon="tabler-pencil" />
-                  </template>
-                  <VListItemTitle>Update Role</VListItemTitle>
-                </VListItem>
+                <div v-if="userData.role === 'superAdmin' && item.role !== 'superAdmin'">
+                  <VListItem @click="editRole(item.id) ">
+                    <template #prepend>
+                      <VIcon icon="tabler-pencil" />
+                    </template>
+                    <VListItemTitle>Update Role</VListItemTitle>
+                  </VListItem>
+                </div>
               </VList>
             </VMenu>
           </VBtn>

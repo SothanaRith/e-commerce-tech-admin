@@ -33,8 +33,8 @@ const errors = ref({
 const refVForm = ref()
 
 const credentials = ref({
-  email: 'sothanarithheang@gmail.com',
-  password: '123',
+  email: '',
+  password: '',
 })
 
 const rememberMe = ref(false)

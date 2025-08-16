@@ -69,7 +69,7 @@ const onReset = () => {
           <AppSelect
             v-model="role"
             placeholder="Select Role"
-            :items="[{ title: 'Admin', value: 'admin' }, { title: 'Customer', value: 'buyer' }]"
+            :items="[{ title: 'Admin', value: 'admin' }, { title: 'Buyer', value: 'buyer' }]"
             clearable
             clear-icon="tabler-x"
             class=" mb-6 "
