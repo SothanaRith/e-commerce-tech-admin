@@ -140,43 +140,6 @@ const resolveUserStatusVariant = stat => {
 <template>
   <section>
     <VCard class="mb-6">
-      <VCardItem class="pb-4">
-        <VCardTitle>Filters</VCardTitle>
-      </VCardItem>
-
-      <VCardText>
-        <VRow>
-          <!-- 👉 Select Role -->
-          <VCol
-            cols="12"
-            sm="4"
-          >
-            <AppSelect
-              v-model="selectedRole"
-              placeholder="Select Role"
-              :items="roles"
-              clearable
-              clear-icon="tabler-x"
-            />
-          </VCol>
-          <!-- 👉 Select Status -->
-          <VCol
-            cols="12"
-            sm="4"
-          >
-            <AppSelect
-              v-model="selectedStatus"
-              placeholder="Select Status"
-              :items="status"
-              clearable
-              clear-icon="tabler-x"
-            />
-          </VCol>
-        </VRow>
-      </VCardText>
-
-      <VDivider />
-
       <VCardText class="d-flex flex-wrap gap-4">
         <div class="me-3 d-flex gap-3">
           <AppSelect
