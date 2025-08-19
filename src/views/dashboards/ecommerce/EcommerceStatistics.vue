@@ -1,5 +1,5 @@
 <script setup>
-import { useDashboardStore } from '@/plugins/store/dashboard.js'
+import { useDashboardStore } from '@/plugins/store/dashboard'
 import { computed, onMounted, ref, watch } from 'vue'
 
 // ✅ your in-house chart card

@@ -459,26 +459,34 @@ const updateOrderStatus = async (id, orderStatus) => {
             <VIcon icon="tabler-dots-vertical" />
             <VMenu activator="parent">
               <VList>
-                <div v-if="item.status.toUpperCase() !== 'cancelled'.toUpperCase() && item.status.toUpperCase() !== 'completed'.toUpperCase()">
+                <!-- Approve -->
+                <div v-if="item.status.toUpperCase() !== 'CANCELLED' && item.status.toUpperCase() !== 'COMPLETED'">
                   <VListItem
-                    value="view"
-                    :disabled="item.status.toUpperCase() === 'cancelled'.toUpperCase()"
+                    value="approve"
+                    :disabled="item.status.toUpperCase() === 'CANCELLED'"
                     @click="updateOrderStatus(item.id, changeStatus(item.status))"
                   >
+                    <VIcon start icon="tabler-check" /> <!-- check icon -->
                     Approve
                   </VListItem>
                 </div>
-                <div v-if="item.status.toUpperCase() !== 'cancelled'.toUpperCase() && item.status.toUpperCase() !== 'completed'.toUpperCase()">
+
+                <!-- Reject -->
+                <div v-if="item.status.toUpperCase() !== 'CANCELLED' && item.status.toUpperCase() !== 'COMPLETED'">
                   <VListItem
-                    value="delete"
-                    :disabled="item.status.toUpperCase() === 'cancelled'.toUpperCase() && item.status.toUpperCase() !== 'completed'.toUpperCase()"
+                    value="reject"
+                    :disabled="item.status.toUpperCase() === 'CANCELLED'"
                     @click="updateOrderStatus(item.id, changeCancelStatus(item.status))"
                   >
+                    <VIcon start icon="tabler-x" /> <!-- cross icon -->
                     Reject
                   </VListItem>
                 </div>
-                <div v-if="item.status.toUpperCase() !== 'pending'.toUpperCase()">
+
+                <!-- Invoice -->
+                <div>
                   <VListItem :to="{ name: 'apps-invoice-preview-id', params: { id: item.id } }">
+                    <VIcon start icon="tabler-file-invoice" /> <!-- invoice icon -->
                     Invoice
                   </VListItem>
                 </div>
