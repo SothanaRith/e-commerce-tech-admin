@@ -7,7 +7,7 @@ import CardStatisticsOrderBarCharts from '@/views/pages/cards/card-statistics/Ca
 
 const dashboardStore = useDashboardStore()
 
-// UI state
+// ======= existing UI state =======
 const period = ref('year') // 'daily' | 'monthly' | 'all'
 const loading = ref(false)
 const errorMsg = ref(null)
@@ -30,7 +30,10 @@ const refreshAll = async () => {
   }
 }
 
-onMounted(refreshAll)
+onMounted(async () => {
+  await refreshAll()
+  await loadLowStock()
+})
 
 // ---- helpers ----
 const formatNumber = n => (n ?? 0).toLocaleString()
@@ -83,7 +86,7 @@ const statistics = computed(() => {
   const o = dashboardStore.overview || {}
   const revDelta = salesDelta.value.revenue
   const ordDelta = salesDelta.value.orders
-
+  
   return [
     { title: 'Sales',    stats: formatNumber(o.orders),   icon: 'tabler-chart-pie-2',  color: 'primary', delta: ordDelta },
     { title: 'Customers', stats: formatNumber(o.users),    icon: 'tabler-users',        color: 'info',    delta: null },
@@ -116,6 +119,64 @@ const topProducts = computed(() => {
     }
   })
 })
+
+/* =========================
+   LOW STOCK (new section)
+   ========================= */
+const lowStockLoading = ref(false)
+const lowStockError = ref(null)
+
+const lowStockOpts = ref({
+  per: 'variant',           // 'product' | 'variant'
+  threshold: 5,
+  recomputeTotal: false,    // if true -> recompute SUM(variants.stock)
+  includeInactive: false,
+  page: 1,
+  size: 10,
+  userId: undefined,        // optionally set if you want cart/wishlist flags
+})
+
+const loadLowStock = async () => {
+  try {
+    lowStockLoading.value = true
+    lowStockError.value = null
+    await dashboardStore.fetchLowStock({ ...lowStockOpts.value })
+  } catch (e) {
+    lowStockError.value = e?.message || 'Failed to load low-stock items'
+  } finally {
+    lowStockLoading.value = false
+  }
+}
+
+// Re-fetch when filters/pagination change
+watch(lowStockOpts, () => {
+  loadLowStock()
+}, { deep: true })
+
+const lowStock = computed(() => dashboardStore.lowStock || {
+  mode: 'product',
+  threshold: 5,
+  data: [],
+  pagination: { currentPage: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+})
+
+// convenience getters
+const lowMode = computed(() => lowStock.value.mode)
+const lowRows = computed(() => lowStock.value.data || [])
+const lowPage = computed(() => lowStock.value.pagination?.currentPage || 1)
+const lowTotalPages = computed(() => lowStock.value.pagination?.totalPages || 0)
+
+const nextLowPage = () => {
+  if (lowPage.value < lowTotalPages.value) {
+    lowStockOpts.value.page = lowPage.value + 1
+  }
+}
+
+const prevLowPage = () => {
+  if (lowPage.value > 1) {
+    lowStockOpts.value.page = lowPage.value - 1
+  }
+}
 </script>
 
 <template>
@@ -233,7 +294,6 @@ const topProducts = computed(() => {
 
     <!-- Top products preview -->
     <VDivider />
-
     <VCardText>
       <div class="d-flex align-center justify-space-between mb-3">
         <h6 class="text-h6">
@@ -309,6 +369,157 @@ const topProducts = computed(() => {
         class="text-medium-emphasis"
       >
         No top products yet.
+      </div>
+    </VCardText>
+
+    <!--
+      =========================
+      LOW STOCK (new section)
+      ========================= 
+    -->
+    <VDivider />
+    <VCardText>
+      <div class="d-flex align-center justify-space-between mb-3">
+        <h6 class="text-h6">
+          Low stock alerts
+        </h6>
+
+        <div class="d-flex align-center gap-3">
+          <VTextField
+            v-model.number="lowStockOpts.threshold"
+            type="number"
+            min="0"
+            label="Threshold"
+            density="compact"
+            hide-details
+            style="max-width: 120px"
+          />
+        </div>
+      </div>
+
+      <VAlert
+        v-if="lowStockError"
+        type="error"
+        variant="tonal"
+        class="mb-3"
+        closable
+      >
+        {{ lowStockError }}
+      </VAlert>
+
+      <VTable
+        v-if="lowRows.length"
+        density="comfortable"
+      >
+        <thead>
+          <tr v-if="lowMode === 'product'">
+            <th class="text-left">
+              Product
+            </th>
+            <th class="text-left">
+              Category
+            </th>
+            <th class="text-right">
+              Total Stock
+            </th>
+            <th class="text-right">
+              Price
+            </th>
+          </tr>
+          <tr v-else>
+            <th class="text-left">
+              Product
+            </th>
+            <th class="text-left">
+              Variant
+            </th>
+            <th class="text-left">
+              SKU
+            </th>
+            <th class="text-right">
+              Stock
+            </th>
+            <th class="text-right">
+              Price
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- product mode rows -->
+          <template v-if="lowMode === 'product'">
+            <tr
+              v-for="p in lowRows"
+              :key="p.id"
+            >
+              <td class="text-left">
+                {{ p.name }}
+              </td>
+              <td class="text-left">
+                {{ p.category?.name || '—' }}
+              </td>
+              <td class="text-right">
+                {{ p.totalStock }}
+              </td>
+              <td class="text-right">
+                {{ formatMoney(p.price) }}
+              </td>
+            </tr>
+          </template>
+
+          <!-- variant mode rows -->
+          <template v-else>
+            <tr
+              v-for="v in lowRows"
+              :key="v.variantId"
+            >
+              <td class="text-left">
+                {{ v.product?.name || '—' }}
+              </td>
+              <td class="text-left">
+                {{ v.title || '—' }}
+              </td>
+              <td class="text-left">
+                {{ v.sku || '—' }}
+              </td>
+              <td class="text-right">
+                {{ v.stock }}
+              </td>
+              <td class="text-right">
+                {{ formatMoney(v.price) }}
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </VTable>
+
+      <div
+        v-else
+        class="text-medium-emphasis"
+      >
+        Nothing is under the selected threshold.
+      </div>
+
+      <!-- pagination -->
+      <div class="d-flex align-center justify-end gap-2 mt-3">
+        <VBtn
+          size="small"
+          variant="text"
+          :disabled="lowPage <= 1 || lowStockLoading"
+          @click="prevLowPage"
+        >
+          Prev
+        </VBtn>
+        <div class="text-caption">
+          Page {{ lowPage }} / {{ lowTotalPages || 1 }}
+        </div>
+        <VBtn
+          size="small"
+          variant="text"
+          :disabled="lowPage >= lowTotalPages || lowStockLoading"
+          @click="nextLowPage"
+        >
+          Next
+        </VBtn>
       </div>
     </VCardText>
   </VCard>
