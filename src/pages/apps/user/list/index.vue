@@ -54,6 +54,18 @@ const roles = [
     title: 'Buyer',
     value: 'buyer',
   },
+  {
+    title: 'Cashier',
+    value: 'cashier',
+  },
+  {
+    title: 'Deliver',
+    value: 'deliver',
+  },
+  {
+    title: 'Stock',
+    value: 'stock',
+  },
 ]
 
 const status = [

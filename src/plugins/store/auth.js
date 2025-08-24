@@ -11,7 +11,7 @@ export const useAuthStore = defineStore('userAuth', () => {
   const login = async data => {
 
     try {
-      const res = await $api('/auth/login', {
+      const res = await $api('/auth/login?isWebAdmin=true', {
         method: 'POST',
         body: {
           email: data.email,
