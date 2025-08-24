@@ -13,22 +13,31 @@ export const useNotificationStore = defineStore('notification', () => {
     totalPages: 0,
   })
 
-  // Fetch user + global notifications
+  // NEW: users-with-notifications state
+  const usersWithNotifications = ref([]) // [{ user, notifications, totals }]
+
+  const usersWithNotifsPagination = ref({
+    currentPage: 1,
+    pageSize: 10,
+    totalPages: 0,
+    totalItems: 0,
+  })
+
+  // ---- EXISTING ----
   const fetchNotifications = async (userId, page = 1, size = 10) => {
     try {
       const response = await useApi(`/notification/notifications/${userId}?page=${page}&size=${size}`)
-      const data = response.data?.value?.data || {}
+      const data = response?.data?.value?.data || {}
 
       notifications.value = data.notifications || []
       totalUnread.value = data.totalUnread || 0
       totalNotifications.value = data.totalNotifications || 0
-      pagination.value = data.pagination || {}
+      pagination.value = data.pagination || pagination.value
     } catch (error) {
       console.error('Failed to fetch notifications:', error)
     }
   }
 
-  // Create new notification (global if no userId)
   const createNotification = async payload => {
     try {
       await useApi('/notification/notifications', {
@@ -41,7 +50,6 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
-  // Mark notification as read
   const markAsRead = async (notificationId, userId) => {
     try {
       await useApi(`/notification/notifications/${notificationId}`, {
@@ -54,37 +62,57 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
-  // Delete a notification
   const deleteNotification = async notificationId => {
     try {
-      await useApi(`/notification/notifications/${notificationId}`, {
-        method: 'DELETE',
-      })
+      await useApi(`/notification/notifications/${notificationId}`, { method: 'DELETE' })
     } catch (error) {
       console.error('Failed to delete notification:', error)
     }
   }
 
-  // Optional: Fetch global notifications only (if separate endpoint exists)
   const fetchGlobalNotifications = async (page = 1, size = 10) => {
     try {
       const response = await useApi(`/notification/notifications-global?page=${page}&size=${size}`)
+      const data = response?.data?.value?.data || {}
 
-      notifications.value = response.data?.value?.data?.notifications || []
+      notifications.value = data.notifications || []
+
+      // optionally set totalNotifications.value if your API returns it
     } catch (error) {
       console.error('Failed to fetch global notifications:', error)
     }
   }
 
+  // ---- NEW: users-with-notifications ----
+  const fetchUsersWithNotifications = async (page = 1, size = 10, onlyUnread = false) => {
+    try {
+      const url = `/notification/users-with-notifications?page=${page}&size=${size}&onlyUnread=${onlyUnread}`
+      const response = await useApi(url)
+      console.log(response?.data?.value?.users)
+      const data = response?.data?.value
+
+      usersWithNotifications.value = data?.users || []
+      usersWithNotifsPagination.value = data?.pagination || usersWithNotifsPagination.value
+    } catch (error) {
+      console.error('Failed to fetch users-with-notifications:', error)
+    }
+  }
+
   return {
+    // state
     notifications,
     totalUnread,
     totalNotifications,
     pagination,
+    usersWithNotifications,
+    usersWithNotifsPagination,
+
+    // actions
     fetchNotifications,
     fetchGlobalNotifications,
     createNotification,
     markAsRead,
     deleteNotification,
+    fetchUsersWithNotifications,
   }
 })
