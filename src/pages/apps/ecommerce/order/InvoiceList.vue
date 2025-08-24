@@ -249,6 +249,33 @@ const updateOrderStatus = async (id, orderStatus) => {
   await useOrder.editOrder(id, orderStatus)
   status.value = orderStatus
 }
+
+const { startDate, endDate } = storeToRefs(useOrder)
+
+const dateRange = ref([])
+
+watch(
+  dateRange,
+  async val => {
+    console.log("hi")
+    if (Array.isArray(val) && val.length === 2) {
+      startDate.value = val[0] || null
+      endDate.value = val[1] || null
+    } else if (typeof val === 'string' && val.includes(' to ')) {
+      const [start, end] = val.split(' to ')
+
+      startDate.value = start || null
+      endDate.value = end || null
+    } else {
+      startDate.value = null
+      endDate.value = null
+    }
+
+    page.value = 1
+    await useOrder.fetchOrder()
+  },
+  { immediate: false },
+)
 </script>
 
 <template>
@@ -334,6 +361,12 @@ const updateOrderStatus = async (id, orderStatus) => {
             >
               Export to PDF
             </VBtn>
+            <AppDateTimePicker
+              v-model="dateRange"
+              placeholder="Select date"
+              style="inline-size: 15.625rem;"
+              :config="{ mode: 'range' }"
+            />
             <div v-if="props.statusChangeDisabled">
               <AppSelect
                 v-model="status"
@@ -342,7 +375,6 @@ const updateOrderStatus = async (id, orderStatus) => {
                   'pending', 'delivery', 'delivered', 'completed', 'cancelled']"
               />
             </div>
-            
             <AppSelect
               v-model="itemsPerPage"
               style="min-inline-size: 6.25rem;"
@@ -466,7 +498,10 @@ const updateOrderStatus = async (id, orderStatus) => {
                     :disabled="item.status.toUpperCase() === 'CANCELLED'"
                     @click="updateOrderStatus(item.id, changeStatus(item.status))"
                   >
-                    <VIcon start icon="tabler-check" /> <!-- check icon -->
+                    <VIcon
+                      start
+                      icon="tabler-check"
+                    /> <!-- check icon -->
                     Approve
                   </VListItem>
                 </div>
@@ -478,7 +513,10 @@ const updateOrderStatus = async (id, orderStatus) => {
                     :disabled="item.status.toUpperCase() === 'CANCELLED'"
                     @click="updateOrderStatus(item.id, changeCancelStatus(item.status))"
                   >
-                    <VIcon start icon="tabler-x" /> <!-- cross icon -->
+                    <VIcon
+                      start
+                      icon="tabler-x"
+                    /> <!-- cross icon -->
                     Reject
                   </VListItem>
                 </div>
@@ -486,7 +524,10 @@ const updateOrderStatus = async (id, orderStatus) => {
                 <!-- Invoice -->
                 <div>
                   <VListItem :to="{ name: 'apps-invoice-preview-id', params: { id: item.id } }">
-                    <VIcon start icon="tabler-file-invoice" /> <!-- invoice icon -->
+                    <VIcon
+                      start
+                      icon="tabler-file-invoice"
+                    /> <!-- invoice icon -->
                     Invoice
                   </VListItem>
                 </div>
@@ -494,7 +535,6 @@ const updateOrderStatus = async (id, orderStatus) => {
             </VMenu>
           </IconBtn>
         </template>
-
         <!-- pagination -->
         <template #bottom>
           <TablePagination

@@ -10,6 +10,8 @@ export const useOrderStore = defineStore('userOrder', () => {
   const page = ref(1) // Current page
   const sortBy = ref()
   const orderBy = ref()
+  const startDate = ref('')
+  const endDate = ref('')
   const orderSingleData = ref()
   const selectedRows = ref([])
   const currentOrderData = ref([])
@@ -45,6 +47,8 @@ export const useOrderStore = defineStore('userOrder', () => {
           searchQuery: searchQuery.value,
           sortBy: sortBy.value,
           orderBy: orderBy.value,
+          startDate: startDate.value,
+          endDate: endDate.value,
           itemsPerPage: itemsPerPage.value,
           page: page.value, // Add pagination params
         },
@@ -186,6 +190,8 @@ export const useOrderStore = defineStore('userOrder', () => {
     editOrder,
     orderData,
     status,
+    startDate,
+    endDate,
     currentOrderData,
     fetchOrderById,
     orderSingleData,
