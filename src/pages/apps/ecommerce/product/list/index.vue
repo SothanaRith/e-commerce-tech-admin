@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useProductStore } from "@/plugins/store/product"
+import AppSelect from "@core/components/app-form-elements/AppSelect.vue";
 
 const headers = [
   { title: 'Product', key: 'product' },
@@ -13,7 +14,6 @@ const headers = [
 
 const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 const selectedStatus = ref()
-const selectedCategory = ref()
 const selectedStock = ref()
 const selectedRows = ref([])
 
@@ -57,10 +57,11 @@ const products = computed(() =>
   })),
 )
 
+const { selectedCategory } = storeToRefs(useProduct)
+
 watch(
   [selectedStatus, selectedCategory, selectedStock, searchQuery, itemsPerPage, page],
   async () => {
-
     await useProduct.fetchProduct()
 
   }, { immediate: true },
@@ -85,6 +86,14 @@ const deleteProduct = async id => {
             placeholder="Search Product"
             style="inline-size: 200px;"
             class="me-3"
+          />
+          <AppSelect
+            v-model="selectedCategory"
+            item-title="title"
+            style="inline-size: 200px;"
+            item-value="value"
+            placeholder="Select Category"
+            :items="useProduct.category.map(c => ({ title: c.name, value: c.id }))"
           />
         </div>
 

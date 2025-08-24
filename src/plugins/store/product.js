@@ -30,7 +30,7 @@ export const useProductStore = defineStore('userProduct', () => {
         size: itemsPerPage.value,
         sortBy: sortBy.value,
         orderBy: orderBy.value,
-        category: selectedCategory.value,
+        categoryId: selectedCategory.value,
         status: selectedStatus.value,
         inStock: selectedStock.value,
       },
