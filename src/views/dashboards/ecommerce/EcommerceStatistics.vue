@@ -6,9 +6,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import CardStatisticsOrderBarCharts from '@/views/pages/cards/card-statistics/CardStatisticsOrderBarCharts.vue'
 
 const dashboardStore = useDashboardStore()
+const userData = useCookie('userData') // Ref
 
 // ======= existing UI state =======
-const period = ref('year') // 'daily' | 'monthly' | 'all'
 const loading = ref(false)
 const errorMsg = ref(null)
 const lastUpdated = ref(null)
@@ -216,82 +216,83 @@ const prevLowPage = () => {
       </div>
     </template>
 
-    <VAlert
-      v-if="errorMsg"
-      type="error"
-      variant="tonal"
-      class="mx-4 mt-4"
-      closable
-    >
-      {{ errorMsg }}
-    </VAlert>
+    <div v-if="userData.role !== 'stock'">
+      <VAlert
+        v-if="errorMsg"
+        type="error"
+        variant="tonal"
+        class="mx-4 mt-4"
+        closable
+      >
+        {{ errorMsg }}
+      </VAlert>
 
-    <VCardText>
-      <VRow v-if="loading">
-        <VCol
-          v-for="i in 4"
-          :key="i"
-          cols="6"
-          md="3"
-        >
-          <VSkeletonLoader type="list-item-two-line" />
-        </VCol>
-      </VRow>
+      <VCardText>
+        <VRow v-if="loading">
+          <VCol
+            v-for="i in 4"
+            :key="i"
+            cols="6"
+            md="3"
+          >
+            <VSkeletonLoader type="list-item-two-line" />
+          </VCol>
+        </VRow>
 
-      <VRow v-else>
-        <VCol
-          v-for="item in statistics"
-          :key="item.title"
-          cols="6"
-          md="3"
-        >
-          <div class="d-flex align-center gap-4 mt-md-9 mt-0">
-            <VAvatar
-              :color="item.color"
-              variant="tonal"
-              rounded
-              size="40"
-            >
-              <VIcon :icon="item.icon" />
-            </VAvatar>
+        <VRow v-else>
+          <VCol
+            v-for="item in statistics"
+            :key="item.title"
+            cols="6"
+            md="3"
+          >
+            <div class="d-flex align-center gap-4 mt-md-9 mt-0">
+              <VAvatar
+                :color="item.color"
+                variant="tonal"
+                rounded
+                size="40"
+              >
+                <VIcon :icon="item.icon" />
+              </VAvatar>
 
-            <div class="d-flex flex-column">
-              <div class="d-flex align-center gap-2">
-                <h5 class="text-h5">
-                  {{ item.stats }}
-                </h5>
-                <VChip
-                  v-if="item.delta !== null && !Number.isNaN(item.delta)"
-                  size="small"
-                  :color="item.delta >= 0 ? 'success' : 'error'"
-                  variant="tonal"
-                >
-                  <VIcon
-                    size="14"
-                    :icon="item.delta >= 0 ? 'tabler-trending-up' : 'tabler-trending-down'"
-                    class="me-1"
-                  />
-                  {{ Math.abs(item.delta).toFixed(1) }}%
-                </VChip>
-              </div>
-              <div class="text-sm text-medium-emphasis">
-                {{ item.title }}
+              <div class="d-flex flex-column">
+                <div class="d-flex align-center gap-2">
+                  <h5 class="text-h5">
+                    {{ item.stats }}
+                  </h5>
+                  <VChip
+                    v-if="item.delta !== null && !Number.isNaN(item.delta)"
+                    size="small"
+                    :color="item.delta >= 0 ? 'success' : 'error'"
+                    variant="tonal"
+                  >
+                    <VIcon
+                      size="14"
+                      :icon="item.delta >= 0 ? 'tabler-trending-up' : 'tabler-trending-down'"
+                      class="me-1"
+                    />
+                    {{ Math.abs(item.delta).toFixed(1) }}%
+                  </VChip>
+                </div>
+                <div class="text-sm text-medium-emphasis">
+                  {{ item.title }}
+                </div>
               </div>
             </div>
-          </div>
-        </VCol>
-      </VRow>
-    </VCardText>
+          </VCol>
+        </VRow>
+      </VCardText>
 
-    <!-- Orders chart card (uses your in-house component) -->
-    <VDivider />
-    <VCardText>
-      <CardStatisticsOrderBarCharts
-        :categories="orderCategories"
-        :series="orderSeries"
-      />
-    </VCardText>
-
+      <!-- Orders chart card (uses your in-house component) -->
+      <VDivider />
+      <VCardText>
+        <CardStatisticsOrderBarCharts
+          :categories="orderCategories"
+          :series="orderSeries"
+        />
+      </VCardText>
+    </div>
     <!-- Top products preview -->
     <VDivider />
     <VCardText>

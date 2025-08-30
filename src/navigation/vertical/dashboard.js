@@ -10,7 +10,7 @@ export default async function getDashboardMenu () {
 
   const role = user?.role || ''
 
-  return (role === 'superAdmin' || role === 'admin')
+  return (role === 'superAdmin' || role === 'admin' || role === 'stock')
     ? [
       {
         title: 'Dashboards',
