@@ -1,5 +1,4 @@
 <script setup>
-import navItems from '@/navigation/vertical'
 import { themeConfig } from '@themeConfig'
 
 // Components
@@ -7,9 +6,10 @@ import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
 import UserProfile from '@/layouts/components/UserProfile.vue'
 
 const userData = useCookie('userData')
+const navItems = ref([])
 
-// @layouts plugin
 import { VerticalNavLayout } from '@layouts'
+import getFullMenu from "@/navigation/vertical"
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -17,6 +17,10 @@ const greeting = computed(() => {
   if (hour < 18) return 'Good afternoon'
 
   return 'Good evening'
+})
+
+onMounted(async () => {
+  navItems.value = await getFullMenu()
 })
 </script>
 

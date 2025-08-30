@@ -62,6 +62,16 @@ const exportToPDF = () => {
 
 const baseUrl = import.meta.env.VITE_BASE_IMG_URL
 
+const userData = useCookie('userData')
+const cookieVal = userData?.value ?? null
+
+const user =
+  typeof cookieVal === 'string'
+    ? ((() => { try { return JSON.parse(cookieVal) } catch { return {} } })())
+    : (cookieVal || {})
+
+const role = user?.role || ''
+
 // Data table Headers
 const headers = [
   {
@@ -180,12 +190,16 @@ useOrder.fetchOrder()
 
 const { totalOrders, itemsPerPage, searchQuery, page, sortBy, orderBy, selectedRows, totalDelivered, totalPending, totalCompleted, status, currentOrderData } = storeToRefs(useOrder)
 
-status.value = props.statusType
+status.value = role === 'deliver' ? "delivery" :props.statusType
 
 onMounted(async () => {
   // Fetch data when component is mounted
   await useOrder.fetchOrder()
-  widgetData.value = [
+  widgetData.value = role === 'deliver' ? [{
+    title: 'Delivered',
+    value: totalDelivered.value,
+    icon: 'tabler-wallet',
+  }] : [
     {
       title: 'All Process Payment',
       value: (totalPending.value + totalDelivered.value + totalCompleted.value),
@@ -211,7 +225,11 @@ onMounted(async () => {
 
 watch([searchQuery, sortBy, orderBy], async () => {
   await useOrder.fetchOrder()
-  widgetData.value = [
+  widgetData.value = role === 'deliver' ? [{
+    title: 'Delivered',
+    value: totalDelivered.value,
+    icon: 'tabler-wallet',
+  }] : [
     {
       title: 'All Process Payment',
       value: (totalPending.value + totalDelivered.value + totalCompleted.value),
@@ -257,7 +275,6 @@ const dateRange = ref([])
 watch(
   dateRange,
   async val => {
-    console.log("hi")
     if (Array.isArray(val) && val.length === 2) {
       startDate.value = val[0] || null
       endDate.value = val[1] || null
@@ -371,7 +388,8 @@ watch(
               <AppSelect
                 v-model="status"
                 style="min-inline-size: 6.25rem;"
-                :items="[
+                :items=" userData.role === 'deliver' ? [
+                  'delivery', 'delivered' ] : [
                   'pending', 'delivery', 'delivered', 'completed', 'cancelled']"
               />
             </div>

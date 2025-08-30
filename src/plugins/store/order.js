@@ -5,7 +5,8 @@ import { createUrl } from "@core/composable/createUrl"
 
 export const useOrderStore = defineStore('userOrder', () => {
   const searchQuery = ref('')
-  const status = ref('pending')
+  const userData = useCookie('userData')
+  const status = userData.role === 'deliver' ? ref('delivery') : ref('pending')
   const itemsPerPage = ref(10) // Number of items per page
   const page = ref(1) // Current page
   const sortBy = ref()
