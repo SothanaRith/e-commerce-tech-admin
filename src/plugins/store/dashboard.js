@@ -27,7 +27,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   const fetchSalesChart = async (period = 'monthly') => {
     const { data } = await useApi(createUrl('/product/sales-chart', {
-      query: { period },
+      query: { period: 'monthly' },
     }))
     salesChart.value = data.value
   }

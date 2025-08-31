@@ -3,7 +3,7 @@ import { useDashboardStore } from '@/plugins/store/dashboard'
 import { computed, onMounted, ref, watch } from 'vue'
 
 // ✅ your in-house chart card
-import CardStatisticsOrderBarCharts from '@/views/pages/cards/card-statistics/CardStatisticsOrderBarCharts.vue'
+import LogisticsShipmentStatistics from "@/views/apps/logistics/LogisticsShipmentStatistics.vue";
 
 const dashboardStore = useDashboardStore()
 const userData = useCookie('userData') // Ref
@@ -44,7 +44,7 @@ const pctChange = (curr, prev) => {
   const p = Number(prev ?? 0)
   if (p === 0 && c === 0) return 0
   if (p === 0) return 100
-  
+
   return ((c - p) / p) * 100
 }
 
@@ -57,17 +57,12 @@ const relativeTime = computed(() => {
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs}h ago`
   const days = Math.floor(hrs / 24)
-  
+
   return `${days}d ago`
 })
 
 // Map store salesChart -> chart props
 const rows = computed(() => dashboardStore.salesChart || [])
-const orderCategories = computed(() => rows.value.map(r => r.date))
-
-const orderSeries = computed(() => [
-  { name: 'Orders', data: rows.value.map(r => Number(r.orders || 0)) },
-])
 
 // Extract latest vs previous from salesChart for Sales/Revenue trends (for the stat chips)
 const salesDelta = computed(() => {
@@ -75,7 +70,7 @@ const salesDelta = computed(() => {
   if (r.length < 2) return { orders: null, revenue: null }
   const last = r[r.length - 1]
   const prev = r[r.length - 2]
-  
+
   return {
     orders: pctChange(Number(last.orders), Number(prev.orders)),
     revenue: pctChange(Number(last.revenue), Number(prev.revenue)),
@@ -86,7 +81,7 @@ const statistics = computed(() => {
   const o = dashboardStore.overview || {}
   const revDelta = salesDelta.value.revenue
   const ordDelta = salesDelta.value.orders
-  
+
   return [
     { title: 'Sales',    stats: formatNumber(o.orders),   icon: 'tabler-chart-pie-2',  color: 'primary', delta: ordDelta },
     { title: 'Customers', stats: formatNumber(o.users),    icon: 'tabler-users',        color: 'info',    delta: null },
@@ -100,14 +95,14 @@ const baseUrl = import.meta.env.VITE_BASE_IMG_URL || ''
 // Top products preview (first image, name, totalSold, revenue)
 const topProducts = computed(() => {
   const list = dashboardStore.topProducts || []
-  
+
   return list.map(p => {
     const img = Array.isArray(p.product?.imageUrl) && p.product.imageUrl.length
       ? p.product.imageUrl[0]
       : null
 
     const absolute = img && (/^https?:\/\//i.test(img) || /^data:/.test(img)) ? img : (img ? `${baseUrl}${img}` : null)
-    
+
     return {
       id: p.id ?? p.product?.id ?? p.productId,
       name: p.name ?? p.product?.name ?? '—',
@@ -215,6 +210,12 @@ const prevLowPage = () => {
         </div>
       </div>
     </template>
+    <VCol
+      cols="12"
+      md="12"
+    >
+      <LogisticsShipmentStatistics />
+    </VCol>
 
     <div v-if="userData.role !== 'stock'">
       <VAlert
@@ -282,15 +283,6 @@ const prevLowPage = () => {
             </div>
           </VCol>
         </VRow>
-      </VCardText>
-
-      <!-- Orders chart card (uses your in-house component) -->
-      <VDivider />
-      <VCardText>
-        <CardStatisticsOrderBarCharts
-          :categories="orderCategories"
-          :series="orderSeries"
-        />
       </VCardText>
     </div>
     <!-- Top products preview -->
@@ -376,7 +368,7 @@ const prevLowPage = () => {
     <!--
       =========================
       LOW STOCK (new section)
-      ========================= 
+      =========================
     -->
     <VDivider />
     <VCardText>
