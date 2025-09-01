@@ -2,19 +2,35 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDashboardStore } from '@/plugins/store/dashboard'
 
-// ── store ──────────────────────────────────────────────────────────────────────
 const dashboard = useDashboardStore()
 
-// force-monthly (matches your API)
-const period = ref('monthly')
+// ── period & month/year filter ────────────────────────────────────────────────
+const period = ref('monthly') // 'daily' | 'monthly' | 'all' | 'month'
+const month = ref(new Date().getMonth() + 1) // 1-12
+const year  = ref(new Date().getFullYear())
 
-// fetch once on mount and whenever period changes (kept for future flexibility)
+// quick lists
+const monthItems = [
+  { title: 'Jan', value: 1 }, { title: 'Feb', value: 2 }, { title: 'Mar', value: 3 },
+  { title: 'Apr', value: 4 }, { title: 'May', value: 5 }, { title: 'Jun', value: 6 },
+  { title: 'Jul', value: 7 }, { title: 'Aug', value: 8 }, { title: 'Sep', value: 9 },
+  { title: 'Oct', value: 10 },{ title: 'Nov', value: 11 },{ title: 'Dec', value: 12 },
+]
+// let user choose nearby years quickly
+const currentY = new Date().getFullYear()
+const yearItems = Array.from({ length: 7 }, (_, i) => currentY - 3 + i) // [Y-3 .. Y+3]
+
+// load data
 const load = async () => {
-  await dashboard.fetchSalesChart(period.value) // returns array of { date:'YYYY-MM-DD', orders, revenue }
+  await dashboard.fetchSalesChart({
+    period: period.value,
+    month: period.value === 'month' ? month.value : undefined,
+    year:  period.value === 'month' ? year.value  : undefined,
+  })
 }
 
 onMounted(load)
-watch(period, load)
+watch([period, month, year], load, { deep: false })
 
 // ── colors & theme tokens ─────────────────────────────────────────────────────
 const chartColors = {
@@ -28,65 +44,80 @@ const borderColor  = 'rgba(var(--v-border-color), var(--v-border-opacity))'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const parseYMD = d => {
-  // Handles 'YYYY-MM-DD' robustly in all browsers
-  // Create a Date as UTC, then treat as local for label purposes
-  const [y, m, day] = d.split('-').map(Number)
-  
-  return new Date(y, m - 1, day)
+  // Accepts 'YYYY-MM-DD' or 'YYYY-MM'
+  if (!d) return new Date(NaN)
+  const parts = d.split('-').map(Number)
+  if (parts.length === 3) {
+    const [y, m, day] = parts
+    return new Date(y, m - 1, day)
+  } else if (parts.length === 2) {
+    const [y, m] = parts
+    return new Date(y, m - 1, 1)
+  }
+  return new Date(NaN)
 }
 
-const formatDayLabel = d => {
-  const dt = typeof d === 'string' ? parseYMD(d) : d
+const fmtDay = dt => `${dt.getDate()} ${dt.toLocaleString(undefined, { month: 'short' })}`       // "6 Aug"
+const fmtMonth = dt => `${dt.toLocaleString(undefined, { month: 'short' })} ${dt.getFullYear()}`  // "Aug 2025"
 
-  // e.g. "6 Aug"
-  return `${dt.getDate()} ${dt.toLocaleString(undefined, { month: 'short' })}`
+const formatLabel = d => {
+  // Use length to detect: 'YYYY-MM-DD' => 10, 'YYYY-MM' => 7
+  if (typeof d === 'string' && d.length === 7) return fmtMonth(parseYMD(d))
+  return fmtDay(parseYMD(d))
 }
 
-const monthTitle = dates => {
+const monthTitle = (dates) => {
   if (!dates.length) return '—'
-  const dt = parseYMD(dates[0])
-  
-  return `${dt.toLocaleString(undefined, { month: 'long' })} ${dt.getFullYear()}`
+  const first = parseYMD(dates[0])
+  return `${first.toLocaleString(undefined, { month: 'long' })} ${first.getFullYear()}`
 }
 
 const niceMax = (n, step = 5) => {
   if (!Number.isFinite(n) || n <= 0) return step
   const raw = Math.ceil(n / step) * step
-  
   return Math.max(step, raw)
 }
 
-// ── computed series & categories from store ───────────────────────────────────
+// ── computed series & categories ──────────────────────────────────────────────
 const sortedChart = computed(() => {
   const arr = Array.isArray(dashboard.salesChart) ? dashboard.salesChart : []
-  
   return [...arr].sort((a, b) => parseYMD(a.date) - parseYMD(b.date))
 })
 
-const categories = computed(() => sortedChart.value.map(r => formatDayLabel(r.date)))
+const categories = computed(() => sortedChart.value.map(r => formatLabel(r.date)))
 const ordersData = computed(() => sortedChart.value.map(r => Number(r.orders ?? 0)))
 const incomeData = computed(() => sortedChart.value.map(r => Number(r.revenue ?? 0)))
 
 const ordersMax = computed(() => niceMax(Math.max(0, ...ordersData.value), 5))
-
 const incomeMax = computed(() => {
-  // choose a “nice” step based on magnitude
   const max = Math.max(0, ...incomeData.value)
   const step = max > 5000 ? 1000 : max > 2000 ? 500 : max > 1000 ? 200 : 100
-  
   return niceMax(max, step)
 })
 
-// subtitle like "Totals for August 2025"
-const subtitleText = computed(() => monthTitle(sortedChart.value.map(r => r.date)))
+// subtitle per period
+const subtitleText = computed(() => {
+  if (period.value === 'daily') {
+    const d = new Date()
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+  if (period.value === 'month') {
+    // specific month/year
+    const d = new Date(year.value, month.value - 1, 1)
+    return `${d.toLocaleString(undefined, { month: 'long' })} ${d.getFullYear()}`
+  }
+  if (period.value === 'all') return 'All time'
+  // 'monthly' (current month from API)
+  return monthTitle(sortedChart.value.map(r => r.date))
+})
 
-// apex series object
+// apex series
 const series = computed(() => ([
   { name: 'Orders', type: 'column', data: ordersData.value },
   { name: 'Income', type: 'line',   data: incomeData.value },
 ]))
 
-// full options but with dynamic axes + categories
+// config
 const salesConfig = computed(() => ({
   chart: {
     type: 'line',
@@ -104,7 +135,7 @@ const salesConfig = computed(() => ({
   },
   stroke: {
     curve: 'smooth',
-    width: [0, 3], // column, line
+    width: [0, 3],
     lineCap: 'round',
   },
   legend: {
@@ -133,14 +164,10 @@ const salesConfig = computed(() => ({
   xaxis: {
     categories: categories.value,
     tickAmount: Math.min(10, categories.value.length),
-    labels: {
-      style: { colors: labelColor, fontSize: '13px', fontWeight: 400 },
-    },
+    labels: { style: { colors: labelColor, fontSize: '13px', fontWeight: 400 } },
     axisBorder: { show: false },
     axisTicks: { show: false },
   },
-
-  // Dual y-axes: left = Orders (count), right = Income ($)
   yaxis: [
     {
       seriesName: 'Orders',
@@ -191,13 +218,43 @@ const salesConfig = computed(() => ({
       :subtitle="`Totals for ${subtitleText}`"
     >
       <template #append>
-        <!-- kept for future; currently fixed to 'monthly' -->
-        <VBtn
-          variant="tonal"
-          append-icon="tabler-chevron-down"
-        >
-          Monthly
-        </VBtn>
+        <div class="d-flex ga-2">
+          <VSelect
+            v-model="period"
+            :items="[
+              { title: 'Today', value: 'daily' },
+              { title: 'This Month', value: 'monthly' },
+              { title: 'Specific Month…', value: 'month' },
+              { title: 'All Time', value: 'all' },
+            ]"
+            variant="tonal"
+            density="comfortable"
+            hide-details
+            style="min-width: 160px"
+          />
+          <template v-if="period === 'month'">
+            <VSelect
+              v-model="month"
+              :items="monthItems"
+              item-title="title"
+              item-value="value"
+              label="Month"
+              density="comfortable"
+              hide-details
+              variant="outlined"
+              style="width: 120px"
+            />
+            <VSelect
+              v-model="year"
+              :items="yearItems"
+              label="Year"
+              density="comfortable"
+              hide-details
+              variant="outlined"
+              style="width: 110px"
+            />
+          </template>
+        </div>
       </template>
     </VCardItem>
 

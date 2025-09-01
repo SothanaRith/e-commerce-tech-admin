@@ -22,33 +22,43 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   const fetchOverview = async () => {
     const { data } = await useApi('/product/overview')
+
     overview.value = data.value
   }
 
-  const fetchSalesChart = async (period = 'monthly') => {
-    const { data } = await useApi(createUrl('/product/sales-chart', {
-      query: { period: 'monthly' },
-    }))
-    salesChart.value = data.value
+  const fetchSalesChart = async ({ period = 'monthly', month, year } = {}) => {
+    const query = { period }
+    if (period === 'month') {
+      if (month) query.month = month
+      if (year) query.year = year
+    }
+    const { data } = await useApi(createUrl('/product/sales-chart', { query }))
+
+    salesChart.value = data.value || []
   }
+
 
   const fetchTopProducts = async () => {
     const { data } = await useApi('/product/top-products')
+
     topProducts.value = data.value
   }
 
   const fetchRecentOrders = async () => {
     const { data } = await useApi('/product/recent-orders')
+
     recentOrders.value = data.value
   }
 
   const fetchRecentReviews = async () => {
     const { data } = await useApi('/product/recent-reviews')
+
     recentReviews.value = data.value
   }
 
   const fetchOrderStatusSummary = async () => {
     const { data } = await useApi('/product/order-status-summary')
+
     orderStatusSummary.value = data.value
   }
 
@@ -96,6 +106,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       fetchRecentOrders(),
       fetchRecentReviews(),
       fetchOrderStatusSummary(),
+
       // optionally preload low stock too:
       // fetchLowStockProducts({ threshold: 5, page: 1, size: 10 }),
     ])
